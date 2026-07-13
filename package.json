@@ -1,0 +1,29 @@
+{
+  "name": "azen-os",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Azen OS — agency business operating system (see AZEN_OS_SPEC.md)",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @azen/db generate",
+    "db:migrate": "pnpm --filter @azen/db migrate",
+    "db:studio": "pnpm --filter @azen/db studio",
+    "db:local": "bash scripts/db-local.sh",
+    "db:local:down": "bash scripts/db-local-stop.sh",
+    "db:local:docker": "docker compose -f docker-compose.dev.yml up -d",
+    "seed:demo": "pnpm --filter @azen/db seed:demo",
+    "simulate": "pnpm --filter @azen/db simulate"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
+  }
+}

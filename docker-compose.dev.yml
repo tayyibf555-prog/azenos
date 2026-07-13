@@ -1,0 +1,20 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: azen-os-db
+    ports:
+      - "54329:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: azen_os
+    volumes:
+      - azen_os_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d azen_os"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+volumes:
+  azen_os_pgdata:

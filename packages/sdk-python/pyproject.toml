@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "azen-os"
+version = "0.1.0"
+description = "Fire-and-forget Python SDK for Azen OS event tracking (spec §6.2)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Azen" }]
+dependencies = [
+  # Used only by the default HTTP transport; signing + event building are pure
+  # stdlib. A custom transport can be injected to avoid the dependency entirely.
+  "requests>=2.25",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.setuptools]
+packages = ["azen_os"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

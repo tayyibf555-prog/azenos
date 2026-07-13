@@ -1,0 +1,7 @@
+{
+  "name": "@azen/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trigger.dev v3 task definitions — populated from Phase 2 (rollups) and Phase 3 (agents). Placeholder in Phase 0."
+}

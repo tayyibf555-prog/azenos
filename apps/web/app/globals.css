@@ -1,0 +1,539 @@
+/* Azen OS dashboard theme — dark, dense, Linear/Vercel-calm. Plain CSS. */
+
+:root {
+  --bg: #0b0e14;
+  --bg-2: #0d111a;
+  --panel: #0a0d13;
+  --card: #12161f;
+  --card-2: #161b26;
+  --card-hover: #171d2a;
+  --input: #0c1017;
+  --border: #212938;
+  --border-2: #2b3446;
+  --border-3: #37425a;
+  --text: #e6e9ef;
+  --text-2: #9099ad;
+  --text-3: #626b81;
+  --accent: #7aa2f7;
+  --accent-2: #92b4ff;
+  --accent-ink: #08101f;
+  --green: #3fb27f;
+  --amber: #d9a441;
+  --red: #f7768e;
+  --focus: #7aa2f7;
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  --sidebar-w: 220px;
+
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Mono", Menlo,
+    Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 640;
+  letter-spacing: -0.012em;
+}
+
+p {
+  margin: 0;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+}
+
+::selection {
+  background: rgba(122, 162, 247, 0.26);
+}
+
+/* scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #29324454 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #232b3b;
+  border-radius: 8px;
+  border: 2px solid var(--bg);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #2e3850;
+}
+
+/* focus */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── helpers ─────────────────────────────────────────────────────────── */
+.mono {
+  font-family: var(--mono);
+}
+.muted {
+  color: var(--text-2);
+}
+.faint {
+  color: var(--text-3);
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scroll-x {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* ─── card ────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.hoverable {
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    transform 0.12s ease;
+}
+.hoverable:hover {
+  border-color: var(--border-3);
+  background: var(--card-hover);
+}
+
+/* ─── buttons ─────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
+  font-weight: 550;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--card-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    opacity 0.12s ease;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: #1b2130;
+  border-color: var(--border-3);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.btn-danger {
+  color: #fff;
+  background: #b23a4d;
+  border-color: #c24457;
+}
+.btn-danger:hover {
+  background: #c24457;
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: var(--card-2);
+  border-color: var(--border);
+}
+.btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  gap: 5px;
+}
+
+/* ─── inputs ──────────────────────────────────────────────────────────── */
+.input,
+select.input,
+textarea.input {
+  width: 100%;
+  height: 36px;
+  padding: 0 11px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--input);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+.input:focus,
+select.input:focus,
+textarea.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.15);
+  outline: none;
+}
+textarea.input {
+  height: auto;
+  min-height: 74px;
+  padding: 9px 11px;
+  line-height: 1.5;
+  resize: vertical;
+}
+select.input {
+  appearance: none;
+  padding-right: 30px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239099ad' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+
+/* ─── table ───────────────────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table th {
+  text-align: left;
+  font-weight: 550;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+.table tbody tr {
+  transition: background 0.1s ease;
+}
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+/* ─── badge / chip / dot ──────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 21px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.badge-mono {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: -0.01em;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 19px;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  color: var(--text-3);
+  background: var(--card-2);
+  border: 1px solid var(--border);
+}
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ─── tabs ────────────────────────────────────────────────────────────── */
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 2px;
+  font-size: 13px;
+  font-weight: 550;
+  font-family: inherit;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab-active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.tab-disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+/* ─── kbd / code block ────────────────────────────────────────────────── */
+.kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.codeblock {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--text);
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 0;
+}
+
+/* ─── empty state ─────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 46px 24px;
+  color: var(--text-2);
+}
+.empty-title {
+  color: var(--text);
+  font-weight: 550;
+  font-size: 14px;
+}
+
+/* ─── animations ──────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #161b26 25%, #1d2431 37%, #161b26 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.row-in {
+  animation: rowIn 0.35s ease both;
+}
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pulse {
+  animation: softpulse 1.5s ease-in-out infinite;
+}
+@keyframes softpulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.ping-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .row-in,
+  .pulse,
+  .ping {
+    animation: none;
+  }
+}
+
+/* ─── Ask Azen — command-K palette ────────────────────────────────────── */
+.ask-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  background: rgba(4, 6, 11, 0.62);
+  backdrop-filter: blur(2px);
+  animation: askOverlayIn 0.12s ease both;
+}
+.ask-panel {
+  width: min(680px, 100%);
+  max-height: 76vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: askPanelIn 0.14s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes askOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes askPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes askBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ask-overlay,
+  .ask-panel {
+    animation: none;
+  }
+}

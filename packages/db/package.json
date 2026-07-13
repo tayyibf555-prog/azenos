@@ -1,0 +1,36 @@
+{
+  "name": "@azen/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./keys": "./src/keys.ts",
+    "./readonly": "./src/readonly.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "studio": "drizzle-kit studio",
+    "seed:demo": "tsx src/seed/index.ts",
+    "rollup:run": "tsx src/rollup/cli.ts",
+    "simulate": "tsx src/seed/simulate.ts",
+    "sim:stripe": "tsx src/seed/simulate-money.ts stripe",
+    "sim:calendly": "tsx src/seed/simulate-money.ts calendly",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@azen/config": "workspace:*",
+    "@azen/events": "workspace:*",
+    "dotenv": "^16.4.0",
+    "drizzle-orm": "^0.44.0",
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

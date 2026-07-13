@@ -1,0 +1,21 @@
+{
+  "name": "@azen/os-sdk",
+  "version": "0.1.0",
+  "description": "Send events to Azen OS — tiny, zero-dependency, fire-and-forget with retry",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@azen/events": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  }
+}

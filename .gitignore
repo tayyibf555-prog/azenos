@@ -1,0 +1,29 @@
+# deps
+node_modules/
+
+# builds
+.next/
+.turbo/
+dist/
+*.tsbuildinfo
+
+# env — real secrets never committed
+.env
+.env.*
+!.env.example
+
+# python (sdk-python)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+
+# db
+supabase/.temp/
+.pgdata/
+.pgdata-log/
+
+# misc
+.DS_Store
+*.log

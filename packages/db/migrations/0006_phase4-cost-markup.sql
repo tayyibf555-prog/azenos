@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ADD COLUMN "cost_markup_pct" integer;
