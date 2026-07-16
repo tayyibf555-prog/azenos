@@ -1,3 +1,4 @@
+import { ActivationBanner } from "../../components/ActivationBanner";
 import { PageHeader } from "../../components/PageHeader";
 import {
   getGrowthPipeline,
@@ -39,12 +40,15 @@ export default async function GrowthPage() {
     error = "Could not load the growth pipeline.";
   }
 
+  const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+
   return (
     <div>
       <PageHeader
         title="Growth"
         subtitle="Turn the Scout's opportunities into client-ready upsell proposals."
       />
+      <ActivationBanner missing={hasAnthropicKey ? [] : ["ANTHROPIC_API_KEY"]} />
       {error ? (
         <div className="card" style={{ padding: 20 }}>
           <span className="muted" style={{ fontSize: 13.5 }}>

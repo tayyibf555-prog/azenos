@@ -87,6 +87,23 @@ export interface WeeklyPackCluster {
   note: string;
 }
 
+/** Phase 7 §B3 — feedback_items counts this week vs last, by kind, agency-wide. */
+export interface WeeklyPackFeedbackKind {
+  kind: string;
+  thisWeek: number;
+  lastWeek: number;
+  /** movement of thisWeek vs lastWeek (directional only; good/bad is the agent's call) */
+  trend: "up" | "down" | "flat";
+}
+
+export interface WeeklyPackFeedback {
+  /** one row per kind, canonical order: bug, feature, question, praise, other */
+  byKind: WeeklyPackFeedbackKind[];
+  totalThisWeek: number;
+  totalLastWeek: number;
+  trend: "up" | "down" | "flat";
+}
+
 export interface WeeklyPackPriorEdition {
   /** London Monday (YYYY-MM-DD) of the prior weekly edition */
   weekStart: string;
@@ -120,6 +137,7 @@ export interface WeeklyPack {
   };
   conversationClusters: WeeklyPackCluster[];
   projects: WeeklyPackProject[];
+  feedback: WeeklyPackFeedback;
   money: {
     collectedThisWeekPence: number;
     collectedLastWeekPence: number;
@@ -147,6 +165,16 @@ interface ScoreboardDef {
   name: string;
   unit: string;
   goodDirection: "up" | "down";
+}
+
+/** Canonical feedback kind order (bugs first — matches the brief-writing rule). */
+const FEEDBACK_KINDS = ["bug", "feature", "question", "praise", "other"] as const;
+
+/** Same up/down/flat directional trend rule as the scoreboard (±5% dead zone). */
+function trendOf(thisPeriod: number, lastPeriod: number): "up" | "down" | "flat" {
+  if (lastPeriod === 0) return thisPeriod === 0 ? "flat" : "up";
+  const ratio = thisPeriod / lastPeriod;
+  return ratio > 1.05 ? "up" : ratio < 0.95 ? "down" : "flat";
 }
 
 const SCOREBOARD_DEFS: readonly ScoreboardDef[] = [
@@ -278,6 +306,12 @@ interface PriorRow {
   week_start: string;
   headline: string;
   body_md: string;
+}
+
+interface FeedbackKindRow {
+  kind: string;
+  this_count: number;
+  last_count: number;
 }
 
 function buildScoreboard(m: MetricRow, b: BookingRow): WeeklyPackScoreboardKpi[] {
@@ -510,6 +544,33 @@ export async function buildAgencyWeeklyPack(
     errors: num(p.errors),
   }));
 
+  // ── feedback this week vs last week, by kind, agency-wide ───────────────────
+  const feedbackKindRows = (await client`
+    select
+      kind::text as kind,
+      count(*) filter (where created_at >= ${w.this_from}::timestamptz and created_at < ${w.this_to}::timestamptz)::int as this_count,
+      count(*) filter (where created_at >= ${w.last_from}::timestamptz and created_at < ${w.this_from}::timestamptz)::int as last_count
+    from feedback_items
+    where org_id = ${orgId}::uuid
+      and created_at >= ${w.last_from}::timestamptz and created_at < ${w.this_to}::timestamptz
+    group by kind
+  `) as unknown as FeedbackKindRow[];
+  const feedbackByKind = new Map<string, { thisCount: number; lastCount: number }>();
+  for (const r of feedbackKindRows) {
+    feedbackByKind.set(r.kind, { thisCount: num(r.this_count), lastCount: num(r.last_count) });
+  }
+  const feedbackByKindPack: WeeklyPackFeedbackKind[] = FEEDBACK_KINDS.map((kind) => {
+    const v = feedbackByKind.get(kind) ?? { thisCount: 0, lastCount: 0 };
+    return {
+      kind,
+      thisWeek: v.thisCount,
+      lastWeek: v.lastCount,
+      trend: trendOf(v.thisCount, v.lastCount),
+    };
+  });
+  const feedbackTotalThis = feedbackByKindPack.reduce((s, k) => s + k.thisWeek, 0);
+  const feedbackTotalLast = feedbackByKindPack.reduce((s, k) => s + k.lastWeek, 0);
+
   // ── money week: collected, MRR moves, overdue ───────────────────────────────
   const moneyRows = (await client`
     select
@@ -615,6 +676,12 @@ export async function buildAgencyWeeklyPack(
     },
     conversationClusters,
     projects,
+    feedback: {
+      byKind: feedbackByKindPack,
+      totalThisWeek: feedbackTotalThis,
+      totalLastWeek: feedbackTotalLast,
+      trend: trendOf(feedbackTotalThis, feedbackTotalLast),
+    },
     money: {
       collectedThisWeekPence: Math.round(num(mo.collected_this)),
       collectedLastWeekPence: Math.round(num(mo.collected_last)),

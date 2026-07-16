@@ -96,6 +96,20 @@ export function generateKeyPair(): GeneratedKeyPair {
   };
 }
 
+/**
+ * Phase 7 §B feedback key: PUBLIC-only, browser-embeddable, never authenticates
+ * with a secret (the widget POSTs from a client site with no secret shipped).
+ * We still populate the NOT NULL secret_hash with an unusable random digest so
+ * token-mode auth can never succeed against it. The `azn_fb_` prefix visually
+ * distinguishes it from the `azn_pk_` ingest identity.
+ */
+export function generateFeedbackKey(): { publicKey: string; secretHash: string } {
+  return {
+    publicKey: `azn_fb_${randomBytes(12).toString("hex")}`,
+    secretHash: sha256Hex(`feedback:${randomBytes(32).toString("hex")}`),
+  };
+}
+
 /** Rotation: new secret under the same public key (§6.1). */
 export function generateSecret(): Omit<GeneratedKeyPair, "publicKey"> {
   const secret = `azn_sk_${randomBytes(32).toString("hex")}`;

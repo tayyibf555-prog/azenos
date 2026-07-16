@@ -80,17 +80,17 @@ describe("POST /api/projects", () => {
     expect(industry?.name).toBe(`Test Ind ${runTag.charAt(0).toUpperCase()}${runTag.slice(1)}`);
   });
 
-  it("suffixes the slug on collision and honors ghl → token auth mode", async () => {
+  it("suffixes the slug on collision and issues an hmac key", async () => {
     const res = await postProjects({
       name: projectName,
       type: "chatbot",
-      stack: "ghl",
+      stack: "mixed",
       clientId: created.project.clientId,
     });
     expect(res.status).toBe(201);
     const body = (await res.json()) as CreateResponse;
     expect(body.project.slug).toBe(`${created.project.slug}-2`);
-    expect(body.key.authMode).toBe("token");
+    expect(body.key.authMode).toBe("hmac");
   });
 
   it("rejects clientId+newClient together (XOR)", async () => {
@@ -127,19 +127,21 @@ describe("POST /api/projects", () => {
       keys: Record<string, unknown>[];
       eventTypesSeen: unknown[];
     };
-    expect(body.keys).toHaveLength(1);
-    const key = body.keys[0];
-    if (!key) throw new Error("key missing");
-    expect(Object.keys(key).sort()).toEqual([
-      "authMode",
-      "createdAt",
-      "id",
-      "label",
-      "lastUsedAt",
-      "publicKey",
-      "rateLimitPer10s",
-      "revokedAt",
-    ]);
+    // Phase 7 §B: project creation provisions TWO keys — ingest + the public
+    // feedback-widget key. Both must come back stripped to the same safe shape.
+    expect(body.keys).toHaveLength(2);
+    for (const key of body.keys) {
+      expect(Object.keys(key).sort()).toEqual([
+        "authMode",
+        "createdAt",
+        "id",
+        "label",
+        "lastUsedAt",
+        "publicKey",
+        "rateLimitPer10s",
+        "revokedAt",
+      ]);
+    }
     expect(body.eventTypesSeen).toEqual([]);
     expect(JSON.stringify(body)).not.toContain("azn_sk_");
   });

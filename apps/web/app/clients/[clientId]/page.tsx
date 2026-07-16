@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { getClientDetail, type ClientDetail } from "../../../lib/server/bookings";
+import {
+  loadClientBenchmark,
+  type ClientBenchmark,
+} from "../../../lib/server/benchmarks";
+import { getClientChurn, type ChurnScore } from "../../../lib/server/churn";
+import { BenchmarkBlock } from "../../../components/BenchmarkBlock";
+import { ChurnChip } from "../../../components/ChurnChip";
 import { HealthDot } from "../../../components/HealthDot";
 import { PageHeader } from "../../../components/PageHeader";
 import { StatCard } from "../../../components/StatCard";
@@ -24,6 +31,8 @@ export default async function ClientDetailPage({
   const { clientId } = await params;
 
   let detail: ClientDetail | null = null;
+  let benchmark: ClientBenchmark | null = null;
+  let churn: ChurnScore | null = null;
   let dbError: string | null = null;
   let notFound = false;
   if (!isUuid(clientId)) {
@@ -33,6 +42,15 @@ export default async function ClientDetailPage({
       const orgId = await requireOrgId();
       detail = await getClientDetail(orgId, clientId);
       if (detail === null) notFound = true;
+      else {
+        // P8-BENCH: anonymised industry strip (last complete month); null when
+        // no industry / below the anonymity floor — the strip simply hides.
+        // P9-KB: deterministic churn-risk score (chip beside the status pill).
+        [benchmark, churn] = await Promise.all([
+          loadClientBenchmark(orgId, clientId),
+          getClientChurn(orgId, clientId),
+        ]);
+      }
     } catch (err) {
       dbError = err instanceof Error ? err.message : String(err);
     }
@@ -64,7 +82,18 @@ export default async function ClientDetailPage({
     );
   }
 
-  const { client, projects, payments, bookings, insights, upsells } = detail;
+  const {
+    client,
+    projects,
+    payments,
+    bookings,
+    insights,
+    upsells,
+    mrr,
+    conversations,
+    feedbackOpen,
+    recentBriefs,
+  } = detail;
   const paidPayments = payments.filter((p) => p.status === "paid");
   const activeProjects = projects.filter((p) => p.status === "live").length;
 
@@ -89,6 +118,13 @@ export default async function ClientDetailPage({
           <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
             <h1 style={{ fontSize: 22, fontWeight: 650 }}>{client.name}</h1>
             <StatusPill status={client.status} />
+            {churn ? (
+              <ChurnChip
+                score={churn.score}
+                band={churn.band}
+                reasons={churn.reasons}
+              />
+            ) : null}
           </div>
           <div className="muted" style={{ fontSize: 13.5, marginTop: 4 }}>
             {client.company ? <span>{client.company}</span> : null}
@@ -122,27 +158,63 @@ export default async function ClientDetailPage({
       >
         <StatCard
           label="Lifetime value"
-          value={formatPence(detail.ltvPence)}
+          value={<span className="accent-num tnum">{formatPence(detail.ltvPence)}</span>}
           sub="Σ paid agency payments"
-          accent={COLORS.green}
         />
         <StatCard
           label="Live projects"
-          value={activeProjects.toLocaleString("en-GB")}
+          value={<span className="tnum">{activeProjects.toLocaleString("en-GB")}</span>}
           sub={`${projects.length} total`}
         />
         <StatCard
           label="API cost (MTD)"
-          value={formatPence(detail.costThisMonthPence)}
+          value={<span className="tnum">{formatPence(detail.costThisMonthPence)}</span>}
           sub="attributed this month"
           accent={detail.costThisMonthPence > 0 ? COLORS.amber : undefined}
         />
         <StatCard
           label="Payments"
-          value={paidPayments.length.toLocaleString("en-GB")}
+          value={<span className="tnum">{paidPayments.length.toLocaleString("en-GB")}</span>}
           sub={`${payments.length} on record`}
         />
+        <StatCard
+          label="MRR share"
+          value={
+            <span className="tnum">
+              {mrr.sharePct === null ? (
+                <span className="faint" style={{ fontSize: 20 }}>
+                  —
+                </span>
+              ) : (
+                `${(mrr.sharePct * 100).toFixed(1)}%`
+              )}
+            </span>
+          }
+          sub={`${formatPence(mrr.clientPence)} of ${formatPence(mrr.orgPence)} org MRR`}
+        />
+        <StatCard
+          label="Cost markup"
+          value={
+            <span className="tnum">
+              {client.costMarkupPct === null ? (
+                <span className="faint" style={{ fontSize: 20 }}>
+                  —
+                </span>
+              ) : (
+                `${client.costMarkupPct}%`
+              )}
+            </span>
+          }
+          sub="applied to attributed API/OS cost"
+        />
       </div>
+
+      {/* ── Industry benchmark strip (P8-BENCH) — hidden below the floor ─── */}
+      {benchmark ? (
+        <div style={{ marginBottom: 26 }}>
+          <BenchmarkBlock data={benchmark} variant="strip" />
+        </div>
+      ) : null}
 
       {/* ── Projects (with margin) ────────────────────────────────────── */}
       <Section
@@ -158,9 +230,12 @@ export default async function ClientDetailPage({
                 <tr>
                   <th>Name</th>
                   <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Events (30d)</th>
+                  <th style={{ textAlign: "right" }}>ROI</th>
                   <th style={{ textAlign: "right" }}>Retainer/mo</th>
                   <th style={{ textAlign: "right" }}>Cost (MTD)</th>
                   <th style={{ textAlign: "right" }}>Margin (MTD)</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -177,18 +252,28 @@ export default async function ClientDetailPage({
                     <td>
                       <StatusPill status={p.status} />
                     </td>
-                    <td className="mono" style={{ textAlign: "right" }}>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
+                      {p.eventsLast30d.toLocaleString("en-GB")}
+                    </td>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
+                      {p.roiMultiple === null ? (
+                        <span className="faint">—</span>
+                      ) : (
+                        `${p.roiMultiple.toFixed(2)}×`
+                      )}
+                    </td>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
                       {p.retainerActive ? (
                         formatPence(p.retainerPenceMonthly)
                       ) : (
                         <span className="faint">—</span>
                       )}
                     </td>
-                    <td className="mono" style={{ textAlign: "right" }}>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
                       {formatPence(p.costThisMonthPence)}
                     </td>
                     <td
-                      className="mono"
+                      className="mono tnum"
                       style={{
                         textAlign: "right",
                         color: marginColor(p.marginPence),
@@ -200,6 +285,15 @@ export default async function ClientDetailPage({
                       ) : (
                         formatPence(p.marginPence)
                       )}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <Link
+                        href={`/projects/${p.id}/analytics`}
+                        className="faint"
+                        style={{ fontSize: 12 }}
+                      >
+                        Analytics →
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -246,7 +340,7 @@ export default async function ClientDetailPage({
                       {p.invoiceRef ?? <span className="faint">—</span>}
                     </td>
                     <td
-                      className="mono"
+                      className="mono tnum"
                       style={{ textAlign: "right", fontWeight: 600 }}
                     >
                       {formatPence(p.amountPence)}
@@ -298,6 +392,96 @@ export default async function ClientDetailPage({
         )}
       </Section>
 
+      {/* ── Conversations digest + feedback rollup ───────────────────── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: 22,
+          alignItems: "start",
+          marginBottom: 26,
+        }}
+      >
+        <Section
+          title="Conversations"
+          subtitle="Last 30 days, across all this client's projects."
+          flush
+        >
+          {conversations.total === 0 ? (
+            <Empty title="No conversation events in the last 30 days" />
+          ) : (
+            <div style={{ padding: "14px 18px", display: "grid", gap: 12 }}>
+              <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
+                <MiniStat label="Volume" value={conversations.total.toLocaleString("en-GB")} />
+                <MiniStat
+                  label="Resolved"
+                  value={
+                    conversations.resolutionRate === null
+                      ? "—"
+                      : `${(conversations.resolutionRate * 100).toFixed(0)}%`
+                  }
+                  color={COLORS.green}
+                />
+                <MiniStat
+                  label="Escalated"
+                  value={
+                    conversations.escalationRate === null
+                      ? "—"
+                      : `${(conversations.escalationRate * 100).toFixed(0)}%`
+                  }
+                  color={COLORS.amber}
+                />
+              </div>
+              <div className="faint" style={{ fontSize: 12 }}>
+                Sentiment — {conversations.sentimentMix.positive} positive ·{" "}
+                {conversations.sentimentMix.neutral} neutral ·{" "}
+                {conversations.sentimentMix.negative} negative
+              </div>
+            </div>
+          )}
+        </Section>
+
+        <Section title="Feedback" subtitle="Open items (not done), by kind." flush>
+          {feedbackOpen.length === 0 ? (
+            <Empty title="No open feedback items" />
+          ) : (
+            <ul style={{ listStyle: "none", display: "grid", gap: 1 }}>
+              {feedbackOpen.map((f) => {
+                const c = FEEDBACK_KIND_COLOR[f.kind] ?? COLORS.grey;
+                return (
+                  <li
+                    key={f.kind}
+                    style={{
+                      padding: "11px 18px",
+                      borderTop: "1px solid var(--border)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <span
+                      className="badge"
+                      style={{
+                        color: c,
+                        background: tint(c, 0.13),
+                        borderColor: tint(c, 0.28),
+                        flex: "none",
+                      }}
+                    >
+                      {humanize(f.kind)}
+                    </span>
+                    <span style={{ flex: 1 }} />
+                    <span className="mono tnum" style={{ fontSize: 13, fontWeight: 600 }}>
+                      {f.count.toLocaleString("en-GB")}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
+      </div>
+
       {/* ── Insights + upsells ────────────────────────────────────────── */}
       <div
         style={{
@@ -339,7 +523,7 @@ export default async function ClientDetailPage({
                     </span>
                     <span style={{ flex: 1, fontSize: 13 }}>{i.title}</span>
                     {i.estimatedValuePence != null && (
-                      <span className="mono faint" style={{ fontSize: 12 }}>
+                      <span className="mono faint tnum" style={{ fontSize: 12 }}>
                         {formatPence(i.estimatedValuePence)}
                       </span>
                     )}
@@ -369,7 +553,7 @@ export default async function ClientDetailPage({
                   <StatusPill status={u.status} />
                   <span style={{ flex: 1, fontSize: 13 }}>{u.title}</span>
                   {u.suggestedPricePence != null && (
-                    <span className="mono faint" style={{ fontSize: 12 }}>
+                    <span className="mono faint tnum" style={{ fontSize: 12 }}>
                       {formatPence(u.suggestedPricePence)}
                     </span>
                   )}
@@ -379,6 +563,44 @@ export default async function ClientDetailPage({
           )}
         </Section>
       </div>
+
+      {/* ── Recent briefs ─────────────────────────────────────────────── */}
+      <Section
+        title="Recent briefs"
+        subtitle="Project-scoped briefs from any of this client's projects."
+      >
+        {recentBriefs.length === 0 ? (
+          <Empty title="No briefs yet" hint="Daily/weekly/monthly briefs land here once generated." />
+        ) : (
+          <ul style={{ listStyle: "none", display: "grid", gap: 1 }}>
+            {recentBriefs.map((b) => (
+              <li
+                key={b.id}
+                style={{
+                  padding: "11px 18px",
+                  borderTop: "1px solid var(--border)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <span className="badge" style={{ textTransform: "capitalize", flex: "none" }}>
+                  {b.period}
+                </span>
+                <span style={{ flex: 1, fontSize: 13 }}>
+                  {b.headline}
+                  {b.projectName && (
+                    <span className="faint"> · {b.projectName}</span>
+                  )}
+                </span>
+                <span className="faint mono" style={{ fontSize: 12 }}>
+                  {formatLondonDate(b.periodStart)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
 
       {/* ── Notes ─────────────────────────────────────────────────────── */}
       {client.notes ? (
@@ -401,6 +623,38 @@ const KIND_COLOR: Record<string, string> = {
   faq_cluster: COLORS.teal,
 };
 
+const FEEDBACK_KIND_COLOR: Record<string, string> = {
+  bug: COLORS.red,
+  feature: COLORS.blue,
+  question: COLORS.teal,
+  praise: COLORS.green,
+  other: COLORS.grey,
+};
+
+function MiniStat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  return (
+    <div>
+      <div className="faint" style={{ fontSize: 11.5 }}>
+        {label}
+      </div>
+      <div
+        className="tnum"
+        style={{ fontSize: 18, fontWeight: 640, color: color ?? "var(--text)" }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function Section({
   title,
   subtitle,
@@ -415,7 +669,7 @@ function Section({
   return (
     <section className="card" style={{ padding: 0, marginBottom: flush ? 0 : 26 }}>
       <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
-        <h3 style={{ fontSize: 14 }}>{title}</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 620 }}>{title}</h3>
         {subtitle && (
           <span className="faint" style={{ fontSize: 12 }}>
             {subtitle}

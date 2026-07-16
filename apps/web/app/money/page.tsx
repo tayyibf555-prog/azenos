@@ -14,6 +14,7 @@ import type {
 } from "../../components/money-types";
 import { formatPence } from "../../lib/format";
 import {
+  getClientMargins,
   getCostStatements,
   getMoneyOverview,
   getOsRoi,
@@ -37,7 +38,10 @@ const STATUS_COLOR: Record<string, string> = {
 
 function Money({ pence, accent }: { pence: number; accent?: boolean }) {
   return (
-    <span style={{ color: accent ? (pence < 0 ? "var(--red)" : COLORS.green) : undefined }}>
+    <span
+      className="tnum"
+      style={{ color: accent ? (pence < 0 ? "var(--red)" : COLORS.green) : undefined }}
+    >
       {formatPence(pence)}
     </span>
   );
@@ -61,33 +65,46 @@ export default async function MoneyPage() {
       />
 
       {dbError || !data ? (
-        <div
-          className="card"
-          style={{ padding: 20, borderColor: "rgba(247,118,142,0.3)", background: "rgba(247,118,142,0.05)" }}
-        >
-          <strong>Database not reachable.</strong>
+        <div className="card" style={{ padding: 20 }}>
+          <strong style={{ color: COLORS.red }}>Database not reachable.</strong>
           <pre className="codeblock" style={{ marginTop: 8 }}>{dbError}</pre>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {/* Hero stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14 }}>
-            <StatCard label="MRR" value={formatPence(data.overview.currentMrrPence)} sub="active subscriptions" />
-            <StatCard label="Cash in · this month" value={formatPence(data.overview.cashInThisMonthPence)} accent={COLORS.green} />
-            <StatCard label="Cash out · this month" value={formatPence(data.overview.cashOutThisMonthPence)} accent={COLORS.red} />
+            <StatCard
+              label="MRR"
+              value={<span className="accent-num tnum">{formatPence(data.overview.currentMrrPence)}</span>}
+              sub="active subscriptions"
+            />
+            <StatCard
+              label="Cash in · this month"
+              value={<span className="tnum">{formatPence(data.overview.cashInThisMonthPence)}</span>}
+              accent={COLORS.green}
+            />
+            <StatCard
+              label="Cash out · this month"
+              value={<span className="tnum">{formatPence(data.overview.cashOutThisMonthPence)}</span>}
+              accent={COLORS.red}
+            />
             <StatCard
               label="Net · this month"
-              value={formatPence(data.overview.netThisMonthPence)}
+              value={<span className="tnum">{formatPence(data.overview.netThisMonthPence)}</span>}
               accent={data.overview.netThisMonthPence < 0 ? COLORS.red : COLORS.green}
             />
             <StatCard
               label="Retainer coverage"
-              value={data.overview.retainerCoverage === null ? "—" : `${data.overview.retainerCoverage}×`}
+              value={
+                <span className="tnum">
+                  {data.overview.retainerCoverage === null ? "—" : `${data.overview.retainerCoverage}×`}
+                </span>
+              }
               sub="MRR ÷ recurring costs"
             />
             <StatCard
               label="Overdue retainers"
-              value={String(data.retainers.totals.overdueCount)}
+              value={<span className="tnum">{data.retainers.totals.overdueCount}</span>}
               sub={data.retainers.totals.overduePence > 0 ? `${formatPence(data.retainers.totals.overduePence)} outstanding` : "all collected"}
               accent={data.retainers.totals.overdueCount > 0 ? COLORS.amber : undefined}
             />
@@ -124,9 +141,9 @@ export default async function MoneyPage() {
                             {c.status}
                           </span>
                         </td>
-                        <td style={{ textAlign: "right", fontWeight: 600 }}>{formatPence(c.ltvPence)}</td>
-                        <td style={{ textAlign: "right" }}>{formatPence(c.paidThisMonthPence)}</td>
-                        <td style={{ textAlign: "right" }} className="faint">{formatPence(c.activeMrrPence)}</td>
+                        <td className="tnum" style={{ textAlign: "right", fontWeight: 600 }}>{formatPence(c.ltvPence)}</td>
+                        <td className="tnum" style={{ textAlign: "right" }}>{formatPence(c.paidThisMonthPence)}</td>
+                        <td style={{ textAlign: "right" }} className="faint tnum">{formatPence(c.activeMrrPence)}</td>
                       </tr>
                     ))}
                     {data.byClient.clients.length === 0 && (
@@ -158,8 +175,8 @@ export default async function MoneyPage() {
                           {r.clientName}
                           {r.projectName && <span className="faint"> · {r.projectName}</span>}
                         </td>
-                        <td style={{ textAlign: "right" }}>{formatPence(r.expectedPence)}</td>
-                        <td style={{ textAlign: "right" }}>{formatPence(r.receivedPence)}</td>
+                        <td className="tnum" style={{ textAlign: "right" }}>{formatPence(r.expectedPence)}</td>
+                        <td className="tnum" style={{ textAlign: "right" }}>{formatPence(r.receivedPence)}</td>
                         <td style={{ textAlign: "right" }}>
                           {r.overdue ? (
                             <span
@@ -181,6 +198,50 @@ export default async function MoneyPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          {/* Margin per client — retainer + billable markup (cost is billed back) */}
+          <div className="card" style={{ padding: 16 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 620, marginBottom: 4 }}>
+              Margin per client{" "}
+              <span className="faint" style={{ fontWeight: 400 }}>
+                · retainer + billable markup (reimbursed cost billed back)
+              </span>
+            </h3>
+            <p className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
+              MTD ({data.clientMargins.month}) vs prior month ({data.clientMargins.priorMonth}).
+            </p>
+            <div className="scroll-x">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th style={{ textAlign: "right" }}>Retainer</th>
+                    <th style={{ textAlign: "right" }}>OS cost MTD</th>
+                    <th style={{ textAlign: "right" }}>Markup MTD</th>
+                    <th style={{ textAlign: "right" }}>Margin MTD</th>
+                    <th style={{ textAlign: "right" }}>Margin prior</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.clientMargins.rows.map((m) => (
+                    <tr key={m.clientId}>
+                      <td>{m.clientName}</td>
+                      <td className="tnum" style={{ textAlign: "right" }}>{formatPence(m.retainerPence)}</td>
+                      <td className="faint tnum" style={{ textAlign: "right" }}>{formatPence(m.mtd.osCostPence)}</td>
+                      <td className="faint tnum" style={{ textAlign: "right" }}>{formatPence(m.mtd.markupPence)}</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        <Money pence={m.mtd.marginPence} accent />
+                      </td>
+                      <td className="tnum" style={{ textAlign: "right" }}>{formatPence(m.prior.marginPence)}</td>
+                    </tr>
+                  ))}
+                  {data.clientMargins.rows.length === 0 && (
+                    <tr><td colSpan={6} className="faint">No clients yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -207,9 +268,9 @@ export default async function MoneyPage() {
                     <tr key={m.projectId}>
                       <td>{m.name}</td>
                       <td className="faint">{m.clientName}</td>
-                      <td style={{ textAlign: "right" }}>{formatPence(m.retainerPence)}</td>
-                      <td style={{ textAlign: "right" }} className="faint">{formatPence(m.aiCostPence)}</td>
-                      <td style={{ textAlign: "right" }} className="faint">{formatPence(m.hostingCostPence)}</td>
+                      <td className="tnum" style={{ textAlign: "right" }}>{formatPence(m.retainerPence)}</td>
+                      <td className="faint tnum" style={{ textAlign: "right" }}>{formatPence(m.aiCostPence)}</td>
+                      <td className="faint tnum" style={{ textAlign: "right" }}>{formatPence(m.hostingCostPence)}</td>
                       <td style={{ textAlign: "right", fontWeight: 600 }}>
                         <Money pence={m.marginPence} accent />
                       </td>
@@ -235,12 +296,12 @@ export default async function MoneyPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
               <div>
                 <div className="muted" style={{ fontSize: 12 }}>AI spend · this month</div>
-                <div style={{ fontSize: 22, fontWeight: 640, marginTop: 4 }}>{formatPence(data.osRoi.aiSpendPence)}</div>
+                <div className="tnum" style={{ fontSize: 22, fontWeight: 640, marginTop: 4 }}>{formatPence(data.osRoi.aiSpendPence)}</div>
                 <div className="faint" style={{ fontSize: 12 }}>{data.osRoi.runCount} agent run{data.osRoi.runCount === 1 ? "" : "s"}</div>
               </div>
               <div>
                 <div className="muted" style={{ fontSize: 12 }}>Retainers under management</div>
-                <div style={{ fontSize: 22, fontWeight: 640, marginTop: 4, color: COLORS.green }}>
+                <div className="tnum" style={{ fontSize: 22, fontWeight: 640, marginTop: 4, color: COLORS.green }}>
                   {formatPence(data.osRoi.retainersUnderManagementPence)}
                 </div>
                 <div className="faint" style={{ fontSize: 12 }}>outcome · placeholder (§10)</div>
@@ -250,7 +311,7 @@ export default async function MoneyPage() {
                   <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Spend by agent</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {data.osRoi.byAgent.map((a) => (
-                      <span key={a.agent} className="badge" style={{ background: tint(COLORS.teal, 0.1), color: COLORS.teal }}>
+                      <span key={a.agent} className="badge tnum" style={{ background: tint(COLORS.teal, 0.1), color: COLORS.teal }}>
                         {a.agent.replace(/_/g, " ")} · {formatPence(a.pence)}
                       </span>
                     ))}
@@ -273,6 +334,7 @@ async function loadAll(orgId: string) {
     byClient,
     retainers,
     margins,
+    clientMargins,
     osRoi,
     costStatements,
     expenses,
@@ -283,6 +345,7 @@ async function loadAll(orgId: string) {
     getRevenueByClient(orgId),
     getRetainers(orgId),
     getProjectMargins(orgId),
+    getClientMargins(orgId),
     getOsRoi(orgId),
     getCostStatements(orgId),
     listExpenses(orgId, { month: undefined }),
@@ -310,6 +373,7 @@ async function loadAll(orgId: string) {
     byClient,
     retainers,
     margins,
+    clientMargins,
     osRoi,
     costStatements,
     expenses: expenseRows,

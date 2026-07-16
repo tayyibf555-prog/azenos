@@ -71,7 +71,7 @@ export interface DemoProject {
   slug: string;
   description: string;
   type: "ai_agent" | "automation" | "chatbot" | "voice_agent";
-  stack: "custom_code" | "ghl";
+  stack: "custom_code" | "n8n" | "mixed";
   buildFeePence: number;
   retainerPenceMonthly: number;
   /** days before "today" the project went live (all demo projects are live) */
@@ -120,9 +120,9 @@ export const PROJECTS: DemoProject[] = [
     name: "Quote Bot",
     slug: "elite-trades-quotebot",
     description:
-      "GHL webchat bot qualifying leads and generating instant quotes for trade jobs.",
+      "Webchat bot qualifying leads and generating instant quotes for trade jobs.",
     type: "chatbot",
-    stack: "ghl",
+    stack: "mixed",
     buildFeePence: 320_000,
     retainerPenceMonthly: 90_000,
     liveDaysAgo: 95,

@@ -3,8 +3,11 @@ export type {
   DailyPack,
   DailyPackAgency,
   DailyPackAnomaly,
+  DailyPackFeedback,
+  DailyPackFeedbackCounts,
   DailyPackInsight,
   DailyPackKpi,
+  DailyPackNotableFeedback,
   DailyPackProject,
 } from "./types";
 

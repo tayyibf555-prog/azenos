@@ -3,6 +3,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { clientStatus, clients, db, industries } from "@azen/db";
 import { NewClientButton } from "../../components/NewClientButton";
 import { PageHeader } from "../../components/PageHeader";
+import { StatCard } from "../../components/StatCard";
 import { StatusPill } from "../../components/StatusPill";
 import { formatLondonDate, formatPence } from "../../lib/format";
 import { requireOrgId } from "../../lib/server/org";
@@ -69,6 +70,9 @@ export default async function ClientsPage() {
     dbError = err instanceof Error ? err.message : String(err);
   }
 
+  const activeCount = rows.filter((r) => r.status === "active").length;
+  const totalCostPence = [...costByClient.values()].reduce((a, b) => a + b, 0);
+
   return (
     <div>
       <PageHeader
@@ -76,6 +80,21 @@ export default async function ClientsPage() {
         subtitle="Everyone the agency builds systems for."
         actions={<NewClientButton statuses={[...clientStatus.enumValues]} />}
       />
+
+      {!dbError && rows.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 14,
+            marginBottom: 20,
+          }}
+        >
+          <StatCard label="Clients" value={<span className="accent-num tnum">{rows.length}</span>} />
+          <StatCard label="Active" value={<span className="tnum">{activeCount}</span>} />
+          <StatCard label="API cost (MTD)" value={<span className="tnum">{formatPence(totalCostPence)}</span>} />
+        </div>
+      )}
 
       {dbError ? (
         <div className="card empty">
@@ -122,9 +141,10 @@ export default async function ClientsPage() {
                       <span className="faint">—</span>
                     )}
                   </td>
-                  <td style={{ textAlign: "right" }}>{c.projectCount}</td>
+                  <td className="tnum" style={{ textAlign: "right" }}>{c.projectCount}</td>
                   <td
-                    style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}
+                    className="tnum"
+                    style={{ textAlign: "right" }}
                     title="Month-to-date API cost (client-system AI + OS agents)"
                   >
                     {costByClient.get(c.id) ? (

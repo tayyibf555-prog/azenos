@@ -7,10 +7,12 @@ import { DeliveryChips } from "../../../components/DeliveryChips";
 import { Markdown } from "../../../components/Markdown";
 import { PageHeader } from "../../../components/PageHeader";
 import { ResendBriefButton } from "../../../components/ResendBriefButton";
+import { ShareReportPanel } from "../../../components/ShareReportPanel";
 import { COLORS, tint } from "../../../components/ui";
 import type { BriefPeriod, BriefStatus } from "../../../components/brief-types";
 import { formatLondonDate, formatLondonTime } from "../../../lib/format";
 import { requireOrgId } from "../../../lib/server/org";
+import { listMonthlyReportTokens } from "../../../lib/server/share";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,18 @@ export default async function BriefDetailPage({
   const period = row.period as BriefPeriod;
   const status = row.status as BriefStatus;
   const pColor = PERIOD_COLOR[period] ?? COLORS.grey;
+
+  // Monthly per-client value reports are shareable as a public white-label link.
+  const snapshot = row.dataSnapshot as Record<string, unknown> | null;
+  const shareClientId =
+    period === "monthly" && snapshot?.["docType"] === "client_value_report"
+      ? typeof snapshot["clientId"] === "string"
+        ? (snapshot["clientId"] as string)
+        : null
+      : null;
+  const shareTokens = shareClientId
+    ? await listMonthlyReportTokens(orgId, shareClientId)
+    : [];
 
   return (
     <div style={{ maxWidth: 780 }}>
@@ -84,7 +98,7 @@ export default async function BriefDetailPage({
             sentWhatsappAt={row.sentWhatsappAt ? row.sentWhatsappAt.toISOString() : null}
           />
           {row.model && (
-            <span className="faint mono" style={{ fontSize: 11.5 }}>
+            <span className="faint mono tnum" style={{ fontSize: 11.5 }}>
               {row.model}
               {row.tokensIn != null && row.tokensOut != null
                 ? ` · ${row.tokensIn}→${row.tokensOut} tok`
@@ -96,6 +110,13 @@ export default async function BriefDetailPage({
         <section className="card" style={{ padding: "20px 22px" }}>
           <Markdown source={row.bodyMd} />
         </section>
+
+        {shareClientId && (
+          <ShareReportPanel
+            clientId={shareClientId}
+            initialTokens={shareTokens}
+          />
+        )}
 
         {row.bodyWhatsapp && (
           <section className="card" style={{ padding: 0 }}>
@@ -113,8 +134,8 @@ export default async function BriefDetailPage({
                 style={{ width: 7, height: 7, background: COLORS.green }}
                 aria-hidden
               />
-              <h3 style={{ fontSize: 13.5 }}>WhatsApp message</h3>
-              <span className="faint" style={{ fontSize: 11.5 }}>
+              <h3 style={{ fontSize: 13.5, fontWeight: 620 }}>WhatsApp message</h3>
+              <span className="faint tnum" style={{ fontSize: 11.5 }}>
                 {row.bodyWhatsapp.length}/900 chars
               </span>
             </div>

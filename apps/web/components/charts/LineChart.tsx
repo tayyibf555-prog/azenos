@@ -16,6 +16,16 @@ export interface ChartPoint {
   value: number | null;
 }
 
+/**
+ * P9-PACK1 additive: a forecast band point continuing past the series'
+ * last point (lib/server/forecast.ts computeForecastBand output shape).
+ */
+export interface BandPoint {
+  periodStart: string;
+  low: number;
+  high: number;
+}
+
 const VIEW_W = 640;
 const VIEW_H = 220;
 const PAD = { top: 14, right: 16, bottom: 26, left: 54 };
@@ -33,12 +43,20 @@ export function LineChart({
   color,
   unit,
   period,
+  band,
 }: {
   points: ChartPoint[];
   comparePoints?: ChartPoint[] | null;
   color: string;
   unit: MetricUnit;
   period: string;
+  /**
+   * P9-PACK1 additive: an optional forecast band continuing past the last
+   * real point — dashed low/high outline + a light fill, labelled
+   * "projection". Purely additive: omit (the default) for byte-identical
+   * output to before this prop existed.
+   */
+  band?: BandPoint[] | null;
 }) {
   const gradId = useId();
   const [hover, setHover] = useState<number | null>(null);
@@ -54,11 +72,20 @@ export function LineChart({
     );
   }
 
+  const bandPts = band && band.length > 0 ? band : null;
+  // Total point count used for the x-scale: when a band is present the chart
+  // continues the SAME timeline into the projected days, so every x position
+  // (including the already-plotted real points) is scaled against the
+  // combined length. When band is omitted this is exactly points.length —
+  // identical to pre-band behaviour.
+  const totalN = points.length + (bandPts ? bandPts.length : 0);
+
   // null-valued buckets are excluded from the y-domain (they're gaps, not 0s).
   const isNum = (v: number | null): v is number => v !== null && Number.isFinite(v);
   const values = points.map((p) => p.value).filter(isNum);
   const compareValues = (comparePoints ?? []).map((p) => p.value).filter(isNum);
-  const combined = [...values, ...compareValues];
+  const bandValues = bandPts ? bandPts.flatMap((b) => [b.low, b.high]) : [];
+  const combined = [...values, ...compareValues, ...bandValues];
   const dataMin = combined.length > 0 ? Math.min(...combined) : 0;
   const dataMax = combined.length > 0 ? Math.max(...combined) : 0;
   let min = dataMin;
@@ -79,7 +106,7 @@ export function LineChart({
   // window — spans the same plot width instead of overshooting/undershooting.
   const xAt = (i: number, n: number): number =>
     PAD.left + (n > 1 ? i / (n - 1) : 0) * PLOT_W;
-  const xFor = (i: number): number => xAt(i, points.length);
+  const xFor = (i: number): number => xAt(i, totalN);
   const yFor = (v: number): number =>
     PAD.top + PLOT_H - ((v - min) / yScale) * PLOT_H;
 
@@ -99,7 +126,11 @@ export function LineChart({
     return d;
   };
 
-  const linePath = buildPath(points, points.length);
+  // buildPath is called with totalN (not points.length) so the real series
+  // shares exactly the same x-scale as the appended band when one is present
+  // — with band omitted, totalN === points.length and this is byte-identical
+  // to the pre-band behaviour.
+  const linePath = buildPath(points, totalN);
   const areaPath = linePath
     ? `${linePath} L ${xFor(points.length - 1).toFixed(1)} ${(
         PAD.top + PLOT_H
@@ -108,6 +139,59 @@ export function LineChart({
   const comparePath =
     comparePoints && comparePoints.length >= 2
       ? buildPath(comparePoints, comparePoints.length)
+      : null;
+
+  // Forecast band geometry: a dashed ribbon continuing from the last REAL
+  // point (so it reads as one unbroken line picking up a projection, not a
+  // disconnected shape) out through each band point's low/high.
+  const lastRealValue = (() => {
+    for (let i = points.length - 1; i >= 0; i--) {
+      if (isNum(points[i]!.value)) return points[i]!.value as number;
+    }
+    return null;
+  })();
+  const bandGeom =
+    bandPts && lastRealValue !== null
+      ? (() => {
+          const anchor: [number, number] = [
+            xFor(points.length - 1),
+            yFor(lastRealValue),
+          ];
+          const lowPts: [number, number][] = [
+            anchor,
+            ...bandPts.map((b, j): [number, number] => [
+              xAt(points.length + j, totalN),
+              yFor(b.low),
+            ]),
+          ];
+          const highPts: [number, number][] = [
+            anchor,
+            ...bandPts.map((b, j): [number, number] => [
+              xAt(points.length + j, totalN),
+              yFor(b.high),
+            ]),
+          ];
+          const midPts: [number, number][] = [
+            anchor,
+            ...bandPts.map((b, j): [number, number] => [
+              xAt(points.length + j, totalN),
+              yFor((b.low + b.high) / 2),
+            ]),
+          ];
+          const toPath = (pts: [number, number][]): string =>
+            pts
+              .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`)
+              .join(" ");
+          const areaPts = [...highPts, ...[...lowPts].reverse()];
+          return {
+            low: toPath(lowPts),
+            high: toPath(highPts),
+            mid: toPath(midPts),
+            area: `${toPath(areaPts)} Z`,
+            labelX: highPts[highPts.length - 1]![0],
+            labelY: Math.min(...highPts.map(([, y]) => y)),
+          };
+        })()
       : null;
 
   const gridVals = [max, (max + min) / 2, min];
@@ -121,7 +205,10 @@ export function LineChart({
     if (rect.width === 0) return;
     const svgX = ((e.clientX - rect.left) / rect.width) * VIEW_W;
     const rel = (svgX - PAD.left) / PLOT_W;
-    const idx = Math.round(rel * (points.length - 1));
+    // Scaled by totalN (matches xFor) then clamped to the real-point range —
+    // hovering into the projected region shows the last real point rather
+    // than indexing past the end of `points`.
+    const idx = Math.round(rel * (totalN - 1));
     setHover(Math.max(0, Math.min(points.length - 1, idx)));
   }
 
@@ -181,7 +268,7 @@ export function LineChart({
               y={y + 3.5}
               textAnchor="end"
               fontSize={10.5}
-              fill="var(--text-3)"
+              fill="var(--text-2)"
             >
               {formatMetricValue(v, unit)}
             </text>
@@ -233,6 +320,49 @@ export function LineChart({
         strokeLinejoin="round"
         strokeLinecap="round"
       />
+
+      {/* forecast band (P9-PACK1 additive) — dashed, continuing off the last
+          real point; only ever rendered when the `band` prop is passed. */}
+      {bandGeom && (
+        <g>
+          <path d={bandGeom.area} fill={color} fillOpacity={0.1} stroke="none" />
+          <path
+            d={bandGeom.high}
+            fill="none"
+            stroke={color}
+            strokeOpacity={0.5}
+            strokeWidth={1.3}
+            strokeDasharray="3 3"
+          />
+          <path
+            d={bandGeom.low}
+            fill="none"
+            stroke={color}
+            strokeOpacity={0.5}
+            strokeWidth={1.3}
+            strokeDasharray="3 3"
+          />
+          <path
+            d={bandGeom.mid}
+            fill="none"
+            stroke={color}
+            strokeOpacity={0.85}
+            strokeWidth={1.6}
+            strokeDasharray="5 3"
+            strokeLinecap="round"
+          />
+          <text
+            x={bandGeom.labelX}
+            y={Math.max(PAD.top + 9, bandGeom.labelY - 6)}
+            textAnchor="end"
+            fontSize={10}
+            fontStyle="italic"
+            fill="var(--text-3)"
+          >
+            projection
+          </text>
+        </g>
+      )}
 
       {/* hover (only over a real, non-null point) */}
       {hv && hvValue !== null && (

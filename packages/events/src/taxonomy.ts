@@ -241,6 +241,27 @@ const integrationDisconnected = loose({
   reason: z.string().optional(),
 });
 
+// ── feedback (Phase 7 §B) ─────────────────────────────────────────────────────
+// The public, least-privilege webhook's ONLY event. Unlike the loose ingest
+// payloads, this is a STRICT object (public abuse surface): unknown keys are
+// stripped, message is length-bounded, kind/severity are enumerated. The
+// honeypot field ("website") is filtered by the endpoint BEFORE this schema.
+const feedbackSubmitted = z.object({
+  kind: z.enum(["bug", "feature", "question", "praise", "other"]),
+  message: z.string().min(1).max(2000),
+  severity: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+  // Public abuse surface: every submitter field is length-bounded and the email
+  // is format-checked. Without these caps a submission can carry ~8KB of garbage
+  // per field (only the 8KB body cap bounds them) and unverified email strings.
+  submitter: z
+    .object({
+      name: z.string().max(120).optional(),
+      email: z.string().email().max(254).optional(),
+    })
+    .optional(),
+  page_url: z.string().max(2048).optional(),
+});
+
 // ── registry ─────────────────────────────────────────────────────────────────
 
 export const eventDataSchemas = {
@@ -292,6 +313,8 @@ export const eventDataSchemas = {
   "system.error": systemError,
   "system.warning": systemWarning,
   "integration.disconnected": integrationDisconnected,
+
+  "feedback.submitted": feedbackSubmitted,
 } as const;
 
 export const EVENT_TYPES = Object.keys(

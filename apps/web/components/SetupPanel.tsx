@@ -5,12 +5,14 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { formatLondonDate } from "../lib/format";
 import { CopyBlock, CopyButton } from "./CopyBlock";
+import { FeedbackWidgetCard } from "./FeedbackWidgetCard";
 import { KeyReveal } from "./KeyReveal";
 import { Modal } from "./Modal";
 import { RelativeTime } from "./RelativeTime";
 import { SnippetTabs } from "./SnippetTabs";
 import { ToastViewport, useToasts } from "./Toast";
-import { COLORS, groupEventTypes, tint } from "./ui";
+import { TrackingPlanCard } from "./TrackingPlanCard";
+import { COLORS, tint } from "./ui";
 import { usePolling } from "./usePolling";
 import type {
   DeliveriesResponse,
@@ -34,15 +36,17 @@ interface RevealState {
 
 export function SetupPanel({
   projectId,
+  projectType,
   activeKey,
+  feedbackKey,
   eventTypesSeen,
-  eventTypes,
   hasEvents,
 }: {
   projectId: string;
+  projectType: string;
   activeKey: ProjectKeyView | null;
+  feedbackKey: ProjectKeyView | null;
   eventTypesSeen: EventTypeSeen[];
-  eventTypes: string[];
   hasEvents: boolean;
 }) {
   const router = useRouter();
@@ -52,7 +56,6 @@ export function SetupPanel({
   const [modal, setModal] = useState<"rotate" | "revoke" | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [ghlBusy, setGhlBusy] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -75,10 +78,6 @@ export function SetupPanel({
     void loadDeliveries();
   }, [loadDeliveries]);
 
-  const seen = new Map<string, EventTypeSeen>(
-    eventTypesSeen.map((e) => [e.type, e]),
-  );
-  const groups = groupEventTypes(eventTypes);
   const publicKey = activeKey?.publicKey ?? "";
   const endpoint = publicKey
     ? `${origin}/api/ingest/${publicKey}`
@@ -163,28 +162,6 @@ export function SetupPanel({
       show("Network error revoking key", "error");
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function enableGhl() {
-    setGhlBusy(true);
-    try {
-      const res = await fetch(`/api/projects/${projectId}/integrations/ghl`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const json = (await res.json()) as { mapping?: string } | ApiError;
-      if (!res.ok || "error" in json) {
-        show("error" in json ? json.error : "Couldn’t enable GHL", "error");
-        return;
-      }
-      show(`GHL mapping enabled · ${json.mapping ?? "ghl-default-v1"}`, "success");
-      router.refresh();
-    } catch {
-      show("Network error enabling GHL", "error");
-    } finally {
-      setGhlBusy(false);
     }
   }
 
@@ -336,154 +313,15 @@ export function SetupPanel({
         </section>
       )}
 
-      {/* ── GoHighLevel (GHL) native webhooks ─────────────────────────── */}
-      {activeKey && (
-        <section className="card" style={{ padding: 18 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 6 }}>GoHighLevel (GHL)</h3>
-          <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
-            No SDK needed. Point a GHL workflow <em>Custom Webhook</em> at the
-            ingest endpoint below with header{" "}
-            <span className="mono">x-azen-token: &lt;project secret&gt;</span>{" "}
-            (rotate the secret above to reveal it). The{" "}
-            <span className="mono">ghl-default-v1</span> preset maps these
-            triggers into taxonomy events:
-          </p>
-          <div style={{ display: "grid", gap: 6, marginBottom: 14 }}>
-            {[
-              ["Contact created", "lead.created"],
-              ["Appointment booked", "booking.created"],
-              ["Pipeline stage changed", "lead.stage_changed"],
-              ["Form submitted", "form.submitted"],
-            ].map(([label, type]) => (
-              <div
-                key={type}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  fontSize: 12.5,
-                }}
-              >
-                <span className="muted">{label}</span>
-                <span
-                  className="badge badge-mono"
-                  style={{
-                    color: COLORS.blue,
-                    background: tint(COLORS.blue, 0.12),
-                    borderColor: tint(COLORS.blue, 0.28),
-                  }}
-                >
-                  → {type}
-                </span>
-              </div>
-            ))}
-          </div>
-          <CopyBlock
-            label="GHL webhook URL"
-            value={endpoint || `${origin}/api/ingest/${activeKey.publicKey}`}
-          />
-          <div style={{ marginTop: 14 }}>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={enableGhl}
-              disabled={ghlBusy}
-            >
-              {ghlBusy ? "Enabling…" : "Enable GHL mapping preset"}
-            </button>
-          </div>
-        </section>
-      )}
+      {/* ── Feedback widget (Phase 7 §B) ──────────────────────────────── */}
+      <FeedbackWidgetCard
+        projectId={projectId}
+        feedbackKey={feedbackKey}
+        origin={origin}
+      />
 
-      {/* ── Event-type checklist ──────────────────────────────────────── */}
-      <section className="card" style={{ padding: 18 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            marginBottom: 14,
-          }}
-        >
-          <h3 style={{ fontSize: 14 }}>Event coverage</h3>
-          <span className="faint" style={{ fontSize: 12 }}>
-            {seen.size} / {eventTypes.length} types seen
-          </span>
-        </div>
-        <div style={{ display: "grid", gap: 16 }}>
-          {groups.map((g) => {
-            const seenInGroup = g.types.filter((t) => seen.has(t)).length;
-            return (
-              <div key={g.label}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <span
-                    className="dot"
-                    style={{ width: 7, height: 7, background: g.color }}
-                    aria-hidden
-                  />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      color: "var(--text-2)",
-                    }}
-                  >
-                    {g.label}
-                  </span>
-                  <span className="faint" style={{ fontSize: 11 }}>
-                    {seenInGroup}/{g.types.length}
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {g.types.map((t) => {
-                    const hit = seen.get(t);
-                    return (
-                      <span
-                        key={t}
-                        className="badge badge-mono"
-                        title={
-                          hit
-                            ? `${hit.count} seen · last ${new Date(
-                                hit.lastAt,
-                              ).toISOString()}`
-                            : "not seen yet"
-                        }
-                        style={
-                          hit
-                            ? {
-                                color: COLORS.green,
-                                background: tint(COLORS.green, 0.12),
-                                borderColor: tint(COLORS.green, 0.28),
-                              }
-                            : {
-                                color: "var(--text-3)",
-                                background: "var(--card-2)",
-                                borderColor: "var(--border)",
-                              }
-                        }
-                      >
-                        {hit ? "✓ " : ""}
-                        {t}
-                        {hit ? ` · ${hit.count}` : ""}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {/* ── Tracking plan ─────────────────────────────────────────────── */}
+      <TrackingPlanCard projectType={projectType} eventTypesSeen={eventTypesSeen} />
 
       {/* ── Delivery log ──────────────────────────────────────────────── */}
       <section className="card" style={{ padding: 0 }}>

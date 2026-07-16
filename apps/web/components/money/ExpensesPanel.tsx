@@ -79,7 +79,7 @@ export function ExpensesPanel({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h3 style={{ fontSize: 14, fontWeight: 620 }}>
           Expenses{" "}
-          <span className="faint" style={{ fontWeight: 400 }}>
+          <span className="faint tnum" style={{ fontWeight: 400 }}>
             · {formatPence(total)}
           </span>
         </h3>
@@ -183,7 +183,7 @@ export function ExpensesPanel({
                     </span>
                   </td>
                   <td className="faint">{e.projectId ? "Project" : "Agency"}</td>
-                  <td style={{ textAlign: "right" }}>{formatPence(e.amountPence)}</td>
+                  <td className="tnum" style={{ textAlign: "right" }}>{formatPence(e.amountPence)}</td>
                   <td className="faint">{formatLondonDate(e.incurredAt)}</td>
                 </tr>
               ))}

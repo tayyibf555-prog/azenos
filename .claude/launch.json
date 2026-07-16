@@ -7,6 +7,13 @@
       "runtimeArgs": ["--filter", "@azen/web", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "web-turbo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@azen/web", "exec", "next", "dev", "--turbopack"],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

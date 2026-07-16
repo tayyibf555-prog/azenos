@@ -108,6 +108,38 @@ export interface CreateMetricResponse {
   definition: MetricDefinition;
 }
 
+// ── metric discovery (§P9-W0B) ────────────────────────────────────────────────
+
+/** A METRIC_CATALOG template resolved against this project's data. */
+export interface DiscoveredMetricView {
+  key: string;
+  name: string;
+  description: string;
+  eventType: string;
+  aggregation: MetricAggregation;
+  unit: MetricUnit;
+  valuePath: string | null;
+  whereEquals: Record<string, string | number | boolean> | null;
+  goodDirection: GoodDirection;
+  isKpi: boolean;
+  groupId: string;
+  /** Human evidence, e.g. "payment.captured seen 214×". */
+  why: string;
+}
+
+export interface CoverageItemView {
+  type: string;
+  required: boolean;
+  present: boolean;
+}
+
+export interface MetricDiscoveryResponse {
+  core: DiscoveredMetricView[];
+  enabled: MetricDefinition[];
+  available: DiscoveredMetricView[];
+  missing: CoverageItemView[];
+}
+
 export interface RoiResponse {
   revenueAttributedPence: number;
   minutesSaved: number;

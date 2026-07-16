@@ -81,6 +81,15 @@ export interface CostStatementProject {
   name: string;
   costPence: number;
   billablePence: number;
+  osCostPence: number;
+  clientSystemAiPence: number;
+  clientEmittedPence: number;
+}
+
+export interface CostStatementProviderLine {
+  provider: string;
+  label: string;
+  pence: number;
 }
 
 export interface CostStatementClient {
@@ -91,6 +100,13 @@ export interface CostStatementClient {
   markupPence: number;
   billablePence: number;
   projects: CostStatementProject[];
+  osCostPence: number;
+  osBillablePence: number;
+  clientSystemAiPence: number;
+  clientSystemAiBillablePence: number;
+  clientEmittedPence: number;
+  providers: CostStatementProviderLine[];
+  clientEmittedBilled: boolean;
 }
 
 export interface CostStatements {
@@ -98,6 +114,9 @@ export interface CostStatements {
   defaultMarkupPct: number;
   clients: CostStatementClient[];
   totals: { costPence: number; markupPence: number; billablePence: number };
+  includeClientEmitted: boolean;
+  totalClientEmittedPence: number;
+  providerTotals: CostStatementProviderLine[];
 }
 
 export interface ExpenseRow {

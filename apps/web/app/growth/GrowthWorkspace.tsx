@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { StatCard } from "../../components/StatCard";
-import { COLORS } from "../../components/ui";
 import { formatPence } from "../../lib/format";
 import {
   type GrowthSummary,
@@ -12,6 +11,7 @@ import {
   type ProposalsResponse,
   type ApiErrorShape,
 } from "../../components/growth-types";
+import { COLORS, tint } from "../../components/ui";
 import { PipelineBoard } from "./PipelineBoard";
 import { ProposalsBoard } from "./ProposalsBoard";
 
@@ -39,6 +39,10 @@ export function GrowthWorkspace({
   const [proposals, setProposals] = useState<ProposalItem[]>(initialProposals);
   const [pipelineBusy, setPipelineBusy] = useState<Record<string, string | undefined>>({});
   const [proposalBusy, setProposalBusy] = useState<Record<string, boolean>>({});
+  // proposalId → full share URL, populated right after a successful "Send"
+  // this session (P8-GROWTH2) — never persisted, never re-fetched (the raw
+  // token is only ever returned once, by the send call itself).
+  const [sentLinks, setSentLinks] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   // The headline funnel comes from the server aggregate (getGrowthSummary — the
   // tested SQL path) on first paint. Once the owner mutates state (dismiss /
@@ -176,6 +180,65 @@ export function GrowthWorkspace({
     }
   }
 
+  async function sendProposal(id: string): Promise<void> {
+    if (proposalBusy[id]) return;
+    setProposalBusy((b) => ({ ...b, [id]: true }));
+    setDirty(true);
+    const prev = proposals;
+    setProposals((list) =>
+      list.map((p) => (p.id === id ? { ...p, status: "sent" } : p)),
+    );
+    try {
+      const res = await fetch(`/api/growth/proposals/${id}/send`, { method: "POST" });
+      if (!res.ok) {
+        setProposals(prev);
+        return;
+      }
+      const json = (await res.json()) as { token: string };
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      setSentLinks((m) => ({ ...m, [id]: `${origin}/share/${json.token}` }));
+      await refreshProposals();
+    } catch {
+      setProposals(prev);
+    } finally {
+      setProposalBusy((b) => {
+        const next = { ...b };
+        delete next[id];
+        return next;
+      });
+    }
+  }
+
+  /**
+   * Re-display the share link for an already-'sent' proposal (P8-GROWTH2). The
+   * raw token is returned only ONCE, by the send call, so if the owner closed /
+   * reloaded before copying it, the link is recovered by decrypting the stored
+   * ciphertext server-side — the authenticated, org-scoped GET /api/share
+   * (at-rest ruling). The SAME token comes back (no re-mint), so its view
+   * history is preserved. Keyed on the proposal's latest share token id.
+   */
+  async function resendProposal(id: string): Promise<void> {
+    if (proposalBusy[id]) return;
+    const tokenId = proposals.find((p) => p.id === id)?.shareTokenId ?? null;
+    if (!tokenId) return;
+    setProposalBusy((b) => ({ ...b, [id]: true }));
+    try {
+      const res = await fetch(`/api/share?tokenId=${tokenId}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const json = (await res.json()) as { token: string };
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      setSentLinks((m) => ({ ...m, [id]: `${origin}/share/${json.token}` }));
+    } catch {
+      /* transient failure — the owner can retry Re-send */
+    } finally {
+      setProposalBusy((b) => {
+        const next = { ...b };
+        delete next[id];
+        return next;
+      });
+    }
+  }
+
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <div
@@ -187,14 +250,17 @@ export function GrowthWorkspace({
       >
         <StatCard
           label="OS-attributed won revenue"
-          value={formatPence(wonRevenue)}
+          value={<span className="accent-num tnum">{formatPence(wonRevenue)}</span>}
           sub={`${wonCount} won proposal${wonCount === 1 ? "" : "s"}`}
-          accent={COLORS.green}
         />
-        <StatCard label="Proposals in flight" value={openProposals} sub="draft · ready · sent" />
+        <StatCard
+          label="Proposals in flight"
+          value={<span className="tnum">{openProposals}</span>}
+          sub="draft · ready · sent"
+        />
         <StatCard
           label="Open opportunities"
-          value={summary.openOpportunities}
+          value={<span className="tnum">{summary.openOpportunities}</span>}
           sub="awaiting review or convert"
         />
       </div>
@@ -204,11 +270,11 @@ export function GrowthWorkspace({
           role="status"
           style={{
             padding: "10px 14px",
-            borderRadius: 10,
+            borderRadius: "var(--radius-sm)",
             fontSize: 12.5,
-            color: "#d9a441",
-            background: "rgba(217, 164, 65, 0.08)",
-            border: "1px solid rgba(217, 164, 65, 0.24)",
+            color: "var(--amber)",
+            background: tint(COLORS.amber, 0.1),
+            border: `1px solid ${tint(COLORS.amber, 0.24)}`,
           }}
         >
           {notice}
@@ -230,7 +296,14 @@ export function GrowthWorkspace({
           onDismiss={dismissInsight}
           onConvert={convertInsight}
         />
-        <ProposalsBoard items={proposals} busy={proposalBusy} onMove={moveProposal} />
+        <ProposalsBoard
+          items={proposals}
+          busy={proposalBusy}
+          onMove={moveProposal}
+          onSend={sendProposal}
+          onResend={resendProposal}
+          sentLinks={sentLinks}
+        />
       </div>
     </div>
   );

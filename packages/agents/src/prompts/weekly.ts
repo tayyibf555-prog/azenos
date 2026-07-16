@@ -12,7 +12,7 @@
 
 import { withSharedTone } from "./shared";
 
-export const WEEKLY_PROMPT_VERSION = "weekly-synth-2026-07-13";
+export const WEEKLY_PROMPT_VERSION = "weekly-synth-2026-07-16";
 
 const ROLE = [
   "# Role",
@@ -45,6 +45,9 @@ const INPUT = [
   "- money: { collectedThisWeekPence, collectedLastWeekPence, currentMrrPence,",
   "  mrrStartedThisWeekPence, mrrCancelledThisWeekPence, mrrNetChangeThisWeekPence,",
   "  overdue{ month, count, pence } } — the week's cash and MRR moves.",
+  "- feedback: { byKind[] (one row per kind, bug first, each {kind, thisWeek,",
+  "  lastWeek, trend}), totalThisWeek, totalLastWeek, trend } — client staff",
+  "  feedback submitted via the projects' feedback widgets, agency-wide.",
   "- priorEdition: { weekStart, headline, bodyMd } or null — YOUR OWN last weekly",
   "  edition. When present, you MUST explicitly reference what has CHANGED since it",
   "  (what you flagged that resolved, what got worse, what carried over).",
@@ -83,6 +86,9 @@ const RULES = [
   "  call out gains AND losses. Flag overdue retainers when overdue.count > 0.",
   "- Reference priorEdition explicitly when it exists — this is the week-over-week",
   "  memory that makes the brief feel continuous.",
+  "- When feedback.totalThisWeek > 0, mention it in agency_narrative_md — bugs",
+  "  first (byKind is bug-first order) — and suggest an action (triage the bugs,",
+  "  reply to open questions). If feedback.totalThisWeek is 0, say nothing about it.",
   "- Be selective in projects[]: a WoW narrative only where a number actually moved.",
   "- top_priorities must be exactly three, concrete, and ordered by leverage.",
   "- Answer ONLY from the pack. If it is silent on something, say nothing about it.",

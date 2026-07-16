@@ -9,11 +9,13 @@ import {
   projects,
 } from "@azen/db";
 import type { ProjectGoal } from "@azen/db";
-import { EVENT_TYPES } from "@azen/events";
 import { AgentsTab } from "../../../components/AgentsTab";
 import { ApiCostsCard } from "../../../components/ApiCostsCard";
+import { ConnectionsTab } from "../../../components/ConnectionsTab";
+import { DeleteProjectButton } from "../../../components/DeleteProjectButton";
 import { ConversationsTab } from "../../../components/ConversationsTab";
 import { EventsTable } from "../../../components/EventsTable";
+import { GoalPacingCard } from "../../../components/GoalPacingCard";
 import { GoalsList } from "../../../components/GoalsList";
 import { HealthDot } from "../../../components/HealthDot";
 import { InsightsList } from "../../../components/InsightsList";
@@ -36,6 +38,7 @@ const TABS_WITH_CONTENT = new Set([
   "overview",
   "events",
   "setup",
+  "connections",
   "metrics",
   "agents",
   "conversations",
@@ -58,6 +61,7 @@ interface Detail {
   };
   keys: ProjectKeyView[];
   activeKey: ProjectKeyView | null;
+  feedbackKey: ProjectKeyView | null;
   eventTypesSeen: EventTypeSeen[];
   stats: { total: number; firstAt: string | null; lastAt: string | null };
   last7: { type: string; count: number }[];
@@ -99,13 +103,17 @@ async function loadDetail(
     id: k.id,
     publicKey: k.publicKey,
     authMode: k.authMode,
+    kind: k.kind,
     rateLimitPer10s: k.rateLimitPer10s,
     createdAt: k.createdAt.toISOString(),
     revokedAt: k.revokedAt ? k.revokedAt.toISOString() : null,
     lastUsedAt: k.lastUsedAt ? k.lastUsedAt.toISOString() : null,
     label: k.label ?? null,
   }));
-  const activeKey = keys.find((k) => k.revokedAt === null) ?? null;
+  const activeKey =
+    keys.find((k) => k.kind === "ingest" && k.revokedAt === null) ?? null;
+  const feedbackKey =
+    keys.find((k) => k.kind === "feedback" && k.revokedAt === null) ?? null;
 
   // raw sql`` aggregates skip drizzle's decoders — timestamptz arrives as a
   // string ("2026-07-12 16:45:00+00"), so normalize through new Date()
@@ -155,6 +163,7 @@ async function loadDetail(
     project: proj,
     keys,
     activeKey,
+    feedbackKey,
     eventTypesSeen,
     stats: {
       total: Number(statRow?.total ?? 0),
@@ -212,12 +221,18 @@ export default async function ProjectDetailPage({
     );
   }
 
-  const { project, activeKey, eventTypesSeen, stats, last7 } = detail;
+  const { project, activeKey, feedbackKey, eventTypesSeen, stats, last7 } =
+    detail;
   const base = `/projects/${projectId}`;
   const tabs: TabDef[] = [
     { key: "overview", label: "Overview", href: `${base}?tab=overview` },
     { key: "events", label: "Events", href: `${base}?tab=events` },
     { key: "setup", label: "Setup", href: `${base}?tab=setup` },
+    {
+      key: "connections",
+      label: "Connections",
+      href: `${base}?tab=connections`,
+    },
     { key: "metrics", label: "Metrics", href: `${base}?tab=metrics` },
     {
       key: "conversations",
@@ -241,11 +256,12 @@ export default async function ProjectDetailPage({
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
+          flexWrap: "wrap",
           gap: 16,
           marginBottom: 20,
         }}
       >
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: "1 1 240px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
             <h1 style={{ fontSize: 22, fontWeight: 650 }}>{project.name}</h1>
             <HealthDot health={project.health} showLabel />
@@ -260,11 +276,28 @@ export default async function ProjectDetailPage({
         <div
           style={{ display: "flex", alignItems: "center", gap: 12, flex: "none" }}
         >
+          <Link href={`${base}/analytics`} className="btn btn-primary">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M3 12h4l2 6 4-14 2 8h6" />
+            </svg>
+            Analytics
+          </Link>
           <StatusPill status={project.status} />
           <span style={{ fontSize: 13 }} className="muted">
             {formatPence(project.retainerPenceMonthly)}
             <span className="faint">/mo</span>
           </span>
+          <DeleteProjectButton projectId={project.id} projectName={project.name} />
         </div>
       </header>
 
@@ -297,12 +330,14 @@ export default async function ProjectDetailPage({
       {tab === "setup" && (
         <SetupPanel
           projectId={projectId}
+          projectType={project.type}
           activeKey={activeKey}
+          feedbackKey={feedbackKey}
           eventTypesSeen={eventTypesSeen}
-          eventTypes={[...EVENT_TYPES]}
           hasEvents={stats.total > 0}
         />
       )}
+      {tab === "connections" && <ConnectionsTab projectId={project.id} />}
     </div>
   );
 }
@@ -334,6 +369,8 @@ function OverviewTab({
         <GoalsList projectId={projectId} goals={goals} />
         <ApiCostsCard projectId={projectId} />
       </div>
+
+      {goals.length > 0 && <GoalPacingCard projectId={projectId} />}
 
       <InsightsList projectId={projectId} />
 

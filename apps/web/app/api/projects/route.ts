@@ -23,8 +23,13 @@ export const POST = withErrorHandling(async (req: Request) => {
   const result = await createProject(orgId, parsed.data);
   if (!result.ok) return jsonError(404, result.error);
   // The ONLY response containing the plaintext secret, besides rotate/revoke.
+  // The feedback key is PUBLIC (no secret) — safe to surface for the widget.
   return NextResponse.json(
-    { project: result.project, key: result.key },
+    {
+      project: result.project,
+      key: result.key,
+      feedbackPublicKey: result.feedbackPublicKey,
+    },
     { status: 201 },
   );
 });

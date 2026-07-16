@@ -409,3 +409,38 @@ across §4/§6.2/§7/§10/§12).
 - (task #30, fixed) ConversationsTab: the ~30-day stat strip vs the 7-day
   "% of the week" cluster shares now read as distinct windows — the FAQ-cluster
   section carries a "Rolling 7-day window …" caption naming both.
+
+## Phases 7–9 + owner directives — CLOSED 2026-07-17 (final gate: 691 tests green)
+
+42. **Phase 7 (feedback + vault + tracking plans)**: public least-privilege feedback webhook
+    (kind-scoped keys, dual rate limit w/ right-most-XFF trust, capped stream reader,
+    honeypot; adversarial abuse-verify fixed 2 majors pre-ship), Connections vault
+    (AES-256-GCM, masked-only responses, RLS added by lead after a C-verify escalation),
+    tracking-plan presets per project type w/ live ✓/○ coverage, GHL purged end-to-end
+    (enums recreated via migration 0008 — the DB cannot store it).
+43. **Phase 8 (client-facing + reliability)**: share links (lead ruling after escalation:
+    sha256-hash lookup + AES ciphertext for owner-only re-display — never plaintext at
+    rest; server-derived secondary ids after a cross-org mint finding), Health Center
+    (alert_instances w/ severity UPGRADE on worsening — verify caught the freeze that
+    would have silenced escalation), Client 360, onboarding wizard, proposal
+    send→viewed→won→wizard-prefill, benchmarks w/ ≥3-client anonymity floor.
+44. **Phase 9 (cost unification + power pack)**: numbers-first overhaul (owner rule:
+    stat tiles, charts behind expand — APPLE-THEME §Numbers-first), metric discovery
+    (presets + METRIC_CATALOG lit by the spine's actual event types), API-Cost section
+    (both streams), pacing/forecasts, cohorts/percentiles/FCR, portfolio quadrant,
+    data-quality card, KB-gap miner → Growth, churn scores (dormant-beyond-window = max
+    silence risk after a v2-verify inversion finding).
+45. **LEAD RULINGS on the Phase-9 money escalations** (contract amended in
+    docs/phase9/CONTRACTS.md): (A) cost statements bill BOTH streams with markup by
+    default (include_client_emitted=true) — reproduces v1 invoices exactly, no silent
+    restatement; =false for clients on their own keys. (B) margin = retainer + markup
+    spread on billed streams; reimbursed cost is NOT re-subtracted (double-count fix).
+46. **Design**: APPLE-THEME v2 "Soft Light" per the owner's reference (light canvas,
+    white cards, BLACK selection pills, pastel-tint chips, royal for buttons/links only)
+    — v1 dark's real legacy is token discipline, which made the light flip cheap.
+    Numbers-first is a standing owner rule.
+47. **Ops learnings**: local Postgres max_connections 100→300 in .pgdata/postgresql.conf
+    (concurrent agent test fleets exhausted 100; NOT in db-local.sh — re-add if .pgdata
+    is recreated). Long-lived dev servers accumulate stale HMR state across repaints —
+    force-reload before judging a "black screen". Never edit applied migrations
+    (0009 prepend mistake caught + reverted; custom migration 0010 used instead).

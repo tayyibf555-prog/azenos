@@ -98,7 +98,7 @@ describe("test-event and replay routes", () => {
             eq(events.type, "custom.azen_test"),
           ),
         );
-      expect(row!.source).toBe("ghl");
+      expect(row!.source).toBe("sdk");
     } finally {
       mockAuth.userId = h.userId;
       await cleanupHarness(tokenHarness);

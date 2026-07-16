@@ -109,8 +109,11 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
         <span className="faint" style={{ fontSize: 12 }}>{initial.month}</span>
       </div>
       <p className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
-        Attributed API + OS cost per client, marked up for invoicing. Default markup{" "}
-        {initial.defaultMarkupPct}%.
+        OS agent + client-system AI cost per client, marked up for invoicing.
+        Default markup {initial.defaultMarkupPct}%.{" "}
+        {initial.includeClientEmitted
+          ? "Both streams are billed; the client-system AI provider split is shown below."
+          : "The client's own key spend is shown separately below and is not billed."}
       </p>
 
       {clients.length === 0 ? (
@@ -141,14 +144,14 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
                         {expanded === c.clientId ? "▾" : "▸"} {c.clientName}
                       </button>
                     </td>
-                    <td style={{ textAlign: "right" }}>{formatPence(c.costPence)}</td>
-                    <td style={{ textAlign: "right" }}>
+                    <td className="tnum" style={{ textAlign: "right" }}>{formatPence(c.costPence)}</td>
+                    <td className="tnum" style={{ textAlign: "right" }}>
                       <MarkupEditor
                         value={c.markupPct}
                         onSave={(pct) => saveMarkup(c.clientId, pct)}
                       />
                     </td>
-                    <td style={{ textAlign: "right", fontWeight: 600, color: COLORS.green }}>
+                    <td className="tnum" style={{ textAlign: "right", fontWeight: 600, color: COLORS.green }}>
                       {formatPence(c.billablePence)}
                     </td>
                     <td style={{ textAlign: "right" }}>
@@ -161,9 +164,9 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
                     c.projects.map((p) => (
                       <tr key={p.projectId} style={{ background: tint(COLORS.blue, 0.03) }}>
                         <td style={{ paddingLeft: 24 }} className="faint">{p.name}</td>
-                        <td style={{ textAlign: "right" }} className="faint">{formatPence(p.costPence)}</td>
+                        <td style={{ textAlign: "right" }} className="faint tnum">{formatPence(p.costPence)}</td>
                         <td />
-                        <td style={{ textAlign: "right" }} className="faint">{formatPence(p.billablePence)}</td>
+                        <td style={{ textAlign: "right" }} className="faint tnum">{formatPence(p.billablePence)}</td>
                         <td />
                       </tr>
                     ))}
@@ -173,13 +176,50 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
             <tfoot>
               <tr style={{ fontWeight: 600 }}>
                 <td>Total</td>
-                <td style={{ textAlign: "right" }}>{formatPence(totals.cost)}</td>
+                <td className="tnum" style={{ textAlign: "right" }}>{formatPence(totals.cost)}</td>
                 <td />
-                <td style={{ textAlign: "right", color: COLORS.green }}>{formatPence(totals.billable)}</td>
+                <td className="tnum" style={{ textAlign: "right", color: COLORS.green }}>{formatPence(totals.billable)}</td>
                 <td />
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {initial.totalClientEmittedPence > 0 && (
+        <div
+          style={{
+            marginTop: 14,
+            paddingTop: 14,
+            borderTop: "1px solid var(--hairline)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 600 }}>
+              Client-system AI · by provider{" "}
+              <span className="faint" style={{ fontWeight: 400 }}>
+                {initial.includeClientEmitted
+                  ? "· billed with markup (included above)"
+                  : "· their own key spend — not billed"}
+              </span>
+            </h4>
+            <span className="tnum" style={{ fontSize: 13, fontWeight: 600 }}>
+              {formatPence(initial.totalClientEmittedPence)}
+            </span>
+          </div>
+          {initial.providerTotals.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+              {initial.providerTotals.map((p) => (
+                <span
+                  key={p.provider}
+                  className="badge tnum"
+                  style={{ background: tint(COLORS.violet, 0.1), color: COLORS.violet }}
+                >
+                  {p.label} · {formatPence(p.pence)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

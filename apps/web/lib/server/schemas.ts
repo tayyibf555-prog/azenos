@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
   clientStatus,
+  credentialProvider,
+  feedbackStatus,
   goodDirection,
   metricAggregation,
   metricUnit,
@@ -64,6 +66,18 @@ export const clientCreateSchema = z.object({
   status: z.enum(clientStatus.enumValues).optional(),
 });
 export type ClientCreateInput = z.infer<typeof clientCreateSchema>;
+
+// Connections Vault create body (docs/phase7/PLAN.md §C1). The secret is NOT
+// trimmed — surrounding characters are significant to some providers and drive
+// last4 — but bounded 8..4096 so an empty/oversize paste is a clean 400. The
+// label is a short human note. `provider` derives from the DB enum so it can
+// never drift from credential_provider.
+export const credentialCreateSchema = z.object({
+  provider: z.enum(credentialProvider.enumValues),
+  label: z.string().trim().min(1).max(60),
+  secret: z.string().min(8).max(4096),
+});
+export type CredentialCreateInput = z.infer<typeof credentialCreateSchema>;
 
 export const projectCreateSchema = z
   .object({
@@ -247,6 +261,14 @@ export const insightPatchSchema = z.object({
   status: z.enum(["reviewed", "dismissed"]),
 });
 export type InsightPatchInput = z.infer<typeof insightPatchSchema>;
+
+// Phase 7 §B2 — triage board status transitions (new → seen → planned → done).
+export const feedbackStatusPatchSchema = z.object({
+  status: z.enum(feedbackStatus.enumValues),
+});
+export type FeedbackStatusPatchInput = z.infer<
+  typeof feedbackStatusPatchSchema
+>;
 
 export const sparklinesQuerySchema = z.object({
   days: z.preprocess(

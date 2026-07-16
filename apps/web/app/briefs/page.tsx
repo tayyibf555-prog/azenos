@@ -1,9 +1,12 @@
 import { desc, eq } from "drizzle-orm";
 import { briefs, clients, db, projects } from "@azen/db";
+import { ActivationBanner } from "../../components/ActivationBanner";
 import { BriefsBrowser, type BriefRow } from "../../components/BriefsBrowser";
 import { GenerateBriefButton } from "../../components/GenerateBriefButton";
 import { PageHeader } from "../../components/PageHeader";
+import { StatCard } from "../../components/StatCard";
 import type { BriefPeriod, BriefStatus } from "../../components/brief-types";
+import { COLORS, tint } from "../../components/ui";
 import { formatLondonDate, formatLondonTime } from "../../lib/format";
 import { requireOrgId } from "../../lib/server/org";
 
@@ -81,6 +84,11 @@ export default async function BriefsPage() {
     dbError = err instanceof Error ? err.message : String(err);
   }
 
+  const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  const daily = rows.filter((r) => r.period === "daily").length;
+  const weekly = rows.filter((r) => r.period === "weekly").length;
+  const monthly = rows.filter((r) => r.period === "monthly").length;
+
   return (
     <div>
       <PageHeader
@@ -88,14 +96,31 @@ export default async function BriefsPage() {
         subtitle="Every daily, weekly and monthly brief the agents have written — filter by period, scope or client."
         actions={<GenerateBriefButton />}
       />
+      <ActivationBanner missing={hasAnthropicKey ? [] : ["ANTHROPIC_API_KEY"]} />
+
+      {!dbError && rows.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 14,
+            marginBottom: 20,
+          }}
+        >
+          <StatCard label="Briefs archived" value={<span className="accent-num tnum">{rows.length}</span>} />
+          <StatCard label="Daily" value={<span className="tnum">{daily}</span>} />
+          <StatCard label="Weekly" value={<span className="tnum">{weekly}</span>} />
+          <StatCard label="Monthly" value={<span className="tnum">{monthly}</span>} />
+        </div>
+      )}
 
       {dbError ? (
         <div
           className="card"
           style={{
             padding: 20,
-            borderColor: "rgba(247,118,142,0.3)",
-            background: "rgba(247,118,142,0.05)",
+            borderColor: tint(COLORS.red, 0.3),
+            background: tint(COLORS.red, 0.05),
           }}
         >
           <strong>Database not reachable.</strong>

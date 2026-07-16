@@ -46,9 +46,9 @@ export function PipelineBoard({
           justifyContent: "space-between",
         }}
       >
-        <h3 style={{ fontSize: 14 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 620 }}>
           Opportunity pipeline{" "}
-          <span className="faint" style={{ fontWeight: 400 }}>
+          <span className="faint tnum" style={{ fontWeight: 400 }}>
             · {items.length} open
           </span>
         </h3>
@@ -130,7 +130,7 @@ export function PipelineBoard({
                   </p>
                 )}
 
-                <div className="mono faint" style={{ fontSize: 11 }}>
+                <div className="mono faint tnum" style={{ fontSize: 11 }}>
                   {it.estimatedValuePence !== null &&
                     `~${formatPence(it.estimatedValuePence)}/mo value`}
                   {it.estimatedHoursSavedMonthly !== null &&
@@ -146,7 +146,7 @@ export function PipelineBoard({
                     disabled={Boolean(b)}
                     onClick={() => onConvert(it.id)}
                     style={{
-                      color: "#0b0e14",
+                      color: "var(--bg)",
                       background: COLORS.green,
                       borderColor: COLORS.green,
                     }}

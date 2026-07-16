@@ -71,24 +71,24 @@ export default async function BookingsPage() {
         >
           <StatCard
             label="Upcoming calls"
-            value={agency.upcoming.length.toLocaleString("en-GB")}
+            value={<span className="tnum">{agency.upcoming.length.toLocaleString("en-GB")}</span>}
             sub="scheduled, from now"
           />
           <StatCard
             label="Show rate"
-            value={pct(agency.rates.showRate)}
+            value={<span className="tnum">{pct(agency.rates.showRate)}</span>}
             sub={`${agency.window.completed}/${agency.rates.resolved} resolved`}
             accent={COLORS.green}
           />
           <StatCard
             label="No-show rate"
-            value={pct(agency.rates.noShowRate)}
+            value={<span className="tnum">{pct(agency.rates.noShowRate)}</span>}
             sub={`${agency.window.noShow} no-shows`}
             accent={agency.window.noShow > 0 ? COLORS.amber : undefined}
           />
           <StatCard
             label="Cancel rate"
-            value={pct(agency.rates.cancelRate)}
+            value={<span className="tnum">{pct(agency.rates.cancelRate)}</span>}
             sub={`${agency.window.cancelled} cancelled`}
             accent={agency.window.cancelled > 0 ? COLORS.red : undefined}
           />
@@ -112,7 +112,7 @@ export default async function BookingsPage() {
               borderBottom: "1px solid var(--border)",
             }}
           >
-            <h3 style={{ fontSize: 14 }}>Source of booked calls</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 620 }}>Source of booked calls</h3>
             <span className="faint" style={{ fontSize: 12 }}>
               Where the agency&apos;s calls came from · {agency.window.total} in
               window
@@ -160,7 +160,7 @@ export default async function BookingsPage() {
                       />
                     </div>
                     <span
-                      className="mono"
+                      className="mono tnum"
                       style={{
                         flex: "none",
                         width: 44,
@@ -185,7 +185,7 @@ export default async function BookingsPage() {
               borderBottom: "1px solid var(--border)",
             }}
           >
-            <h3 style={{ fontSize: 14 }}>Discovery → client conversion</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 620 }}>Discovery → client conversion</h3>
             <span className="faint" style={{ fontSize: 12 }}>
               Discovery calls that became active clients ·{" "}
               {pct(agency.conversion.rate)} converted
@@ -233,23 +233,23 @@ export default async function BookingsPage() {
           }}
         >
           <div>
-            <h3 style={{ fontSize: 14 }}>Appointments booked for clients</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 620 }}>Appointments booked for clients</h3>
             <span className="faint" style={{ fontSize: 12 }}>
               What our systems booked for clients this month ({clientEnd.month})
             </span>
           </div>
           <div style={{ textAlign: "right" }}>
             <div
+              className="accent-num tnum"
               style={{
                 fontSize: 30,
                 fontWeight: 680,
                 letterSpacing: "-0.02em",
-                color: COLORS.green,
               }}
             >
               {clientEnd.total.toLocaleString("en-GB")}
             </div>
-            <div className="faint" style={{ fontSize: 11 }}>
+            <div className="faint tnum" style={{ fontSize: 11 }}>
               {clientEnd.completed} completed · {clientEnd.noShow} no-show
             </div>
           </div>
@@ -298,18 +298,18 @@ export default async function BookingsPage() {
                       )}
                     </td>
                     <td
-                      className="mono"
+                      className="mono tnum"
                       style={{ textAlign: "right", fontWeight: 600 }}
                     >
                       {p.count}
                     </td>
-                    <td className="mono" style={{ textAlign: "right" }}>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
                       {p.completed}
                     </td>
-                    <td className="mono" style={{ textAlign: "right" }}>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
                       {p.noShow}
                     </td>
-                    <td className="mono" style={{ textAlign: "right" }}>
+                    <td className="mono tnum" style={{ textAlign: "right" }}>
                       {p.scheduled}
                     </td>
                   </tr>
@@ -328,7 +328,7 @@ export default async function BookingsPage() {
             borderBottom: "1px solid var(--border)",
           }}
         >
-          <h3 style={{ fontSize: 14 }}>Upcoming agency calls</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 620 }}>Upcoming agency calls</h3>
         </div>
         {agency.upcoming.length === 0 ? (
           <div className="empty">
@@ -357,7 +357,7 @@ export default async function BookingsPage() {
                   const cat = KIND_COLOR[b.kind] ?? COLORS.blue;
                   return (
                     <tr key={b.id}>
-                      <td className="mono" style={{ fontSize: 12.5 }}>
+                      <td className="mono tnum" style={{ fontSize: 12.5 }}>
                         {formatLondonTime(b.startsAt)}
                       </td>
                       <td>
@@ -428,7 +428,7 @@ function FunnelRow({
         />
       </div>
       <span
-        className="mono"
+        className="mono tnum"
         style={{ flex: "none", width: 36, textAlign: "right", fontSize: 12.5 }}
       >
         {value}

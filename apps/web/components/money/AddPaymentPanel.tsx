@@ -247,7 +247,7 @@ function CsvImport({ onDone }: { onDone: () => void }) {
           Preview
         </button>
         {preview && preview.validCount > 0 && (
-          <button type="button" className="btn btn-primary btn-sm" onClick={doCommit} disabled={busy}>
+          <button type="button" className="btn btn-primary btn-sm tnum" onClick={doCommit} disabled={busy}>
             Commit {preview.validCount} valid row{preview.validCount === 1 ? "" : "s"} · {formatPence(preview.totalPence)}
           </button>
         )}
@@ -273,7 +273,7 @@ function CsvImport({ onDone }: { onDone: () => void }) {
                 <tr key={r.index}>
                   <td className="faint">{r.index}</td>
                   <td>{r.clientName ?? r.raw.join(" · ")}</td>
-                  <td style={{ textAlign: "right" }}>
+                  <td className="tnum" style={{ textAlign: "right" }}>
                     {r.amountPence !== undefined ? formatPence(r.amountPence) : "—"}
                   </td>
                   <td className="faint">{r.kind ?? "—"}</td>

@@ -127,6 +127,28 @@ export interface MrrBridge {
   lost: MrrBridgeMove[];
 }
 
+/**
+ * Phase 8 §P8-BENCH — one anonymised industry-benchmark line for the strategist.
+ * clientValue and median are in DISPLAY units (pence / hours / count). Only the
+ * subject client's own value + the aggregate peer median escape; no other
+ * client's number or identity is ever present. Populated only when the client's
+ * industry cleared the ≥3-distinct-client anonymity floor.
+ */
+export interface MonthlyBenchmarkMetric {
+  key: string;
+  label: string;
+  clientValue: number;
+  median: number;
+  standing: "ahead" | "near" | "behind";
+}
+
+export interface MonthlyClientBenchmark {
+  industryName: string;
+  /** distinct clients in the industry sample (always ≥3) */
+  sampleClients: number;
+  metrics: MonthlyBenchmarkMetric[];
+}
+
 export interface MonthlyClient {
   clientId: string;
   clientName: string;
@@ -149,6 +171,8 @@ export interface MonthlyClient {
   minutesSaved: number;
   /** automation_opportunity / upsell / scout-flagged clusters — the dossier seed */
   topOpportunities: MonthlyInsight[];
+  /** §P8-BENCH: anonymised industry benchmark, or null below the floor / no industry */
+  benchmark: MonthlyClientBenchmark | null;
 }
 
 export interface MonthlyConversationDigest {
@@ -377,6 +401,157 @@ function toInsight(r: InsightRow): MonthlyInsight {
     estimatedHoursSavedMonthly: numOrNull(r.estimated_hours_saved_monthly),
     scoutCandidate: evidence["scout_candidate"] === true,
   };
+}
+
+// ── §P8-BENCH anonymised industry benchmarks ──────────────────────────────────
+
+/**
+ * Headline benchmark metrics — day-rollup keys with clean, client-comparable
+ * semantics that match the shared value report's tiles. All are goodDirection
+ * 'up', so higher = ahead of the median. toDisplay is monotonic, so applying it
+ * after the percentile is equivalent (pence / hours / count display units).
+ */
+const BENCH_KEYS = [
+  { key: "revenue_attributed", label: "Value delivered", toDisplay: (r: number) => Math.round(r) },
+  { key: "minutes_saved", label: "Hours saved", toDisplay: (r: number) => Math.round((r / 60) * 10) / 10 },
+  { key: "conversations", label: "Conversations handled", toDisplay: (r: number) => Math.round(r) },
+] as const;
+
+/** Anonymity floor: an industry with fewer distinct clients gets no benchmark. */
+const BENCH_FLOOR = 3;
+
+/** Linear-interpolation percentile (numpy / percentile_cont), p in [0,1]. */
+function percentileAt(sortedAsc: number[], p: number): number {
+  const n = sortedAsc.length;
+  if (n === 0) return 0;
+  if (n === 1) return sortedAsc[0]!;
+  const rank = p * (n - 1);
+  const lo = Math.floor(rank);
+  const hi = Math.ceil(rank);
+  if (lo === hi) return sortedAsc[lo]!;
+  return sortedAsc[lo]! + (rank - lo) * (sortedAsc[hi]! - sortedAsc[lo]!);
+}
+
+function benchStanding(value: number, median: number): "ahead" | "near" | "behind" {
+  if (median <= 0) return value > 0 ? "ahead" : "near";
+  const ratio = value / median;
+  if (ratio >= 0.95 && ratio <= 1.05) return "near";
+  return value > median ? "ahead" : "behind";
+}
+
+interface BenchRow {
+  industry_id: string;
+  client_id: string;
+  metric_key: string;
+  value: number;
+}
+
+/**
+ * Per-client × per-metric monthly aggregates grouped by industry, reduced to one
+ * anonymised benchmark line per client — but ONLY for industries that cleared
+ * the ≥3-distinct-client floor. Same window + live-project filter + percentile
+ * math as the web-side lib/server/benchmarks.ts (kept in lock-step by design).
+ * Clients with live projects but no rollup for a metric count as a real 0.
+ */
+async function computeMonthlyBenchmarks(
+  db: Db,
+  orgId: string,
+  startUTC: string,
+  endUTC: string,
+): Promise<Map<string, MonthlyClientBenchmark>> {
+  const client = db.$client;
+  const keys = BENCH_KEYS.map((k) => k.key);
+
+  const rows = (await client`
+    with live as (
+      select cl.industry_id, cl.id as client_id, p.id as project_id
+      from clients cl
+      join projects p on p.client_id = cl.id and p.status = 'live'
+      where cl.org_id = ${orgId}::uuid and cl.industry_id is not null
+    ),
+    client_set as (select distinct industry_id, client_id from live),
+    keys as (select unnest(${keys}::text[]) as metric_key)
+    select cs.industry_id::text as industry_id, cs.client_id::text as client_id,
+      k.metric_key as metric_key,
+      coalesce(sum(r.value), 0)::float8 as value
+    from client_set cs
+    cross join keys k
+    left join live l on l.client_id = cs.client_id
+    left join metric_rollups r on r.project_id = l.project_id
+      and r.metric_key = k.metric_key and r.period = 'day'
+      and r.period_start >= ${startUTC}::timestamptz and r.period_start < ${endUTC}::timestamptz
+    group by cs.industry_id, cs.client_id, k.metric_key
+  `) as unknown as BenchRow[];
+
+  const nameRows = (await client`
+    select id::text as id, name from industries where org_id = ${orgId}::uuid
+  `) as unknown as { id: string; name: string }[];
+  const nameById = new Map(nameRows.map((r) => [r.id, r.name] as const));
+
+  const byIndustry = new Map<
+    string,
+    { clients: Set<string>; perClient: Map<string, Map<string, number>> }
+  >();
+  for (const row of rows) {
+    let g = byIndustry.get(row.industry_id);
+    if (!g) {
+      g = { clients: new Set(), perClient: new Map() };
+      byIndustry.set(row.industry_id, g);
+    }
+    g.clients.add(row.client_id);
+    let pc = g.perClient.get(row.client_id);
+    if (!pc) {
+      pc = new Map();
+      g.perClient.set(row.client_id, pc);
+    }
+    pc.set(row.metric_key, Number(row.value));
+  }
+
+  const out = new Map<string, MonthlyClientBenchmark>();
+  for (const [industryId, g] of byIndustry) {
+    const clientIds = [...g.clients];
+    if (clientIds.length < BENCH_FLOOR) continue; // anonymity floor
+    const industryName = nameById.get(industryId) ?? "industry";
+
+    const medianByKey = new Map<string, number>();
+    const signalByKey = new Map<string, boolean>();
+    for (const spec of BENCH_KEYS) {
+      const values = clientIds
+        .map((id) => g.perClient.get(id)?.get(spec.key) ?? 0)
+        .sort((a, b) => a - b);
+      medianByKey.set(spec.key, percentileAt(values, 0.5));
+      // Zero-signal gate — MUST match the web lib (lib/server/benchmarks.ts:
+      // `raw.p75 <= 0 && subject <= 0` skips): gate the peer signal on p75 > 0,
+      // NOT max > 0. Gating on max let a lone top client (p75 = 0) surface a bar
+      // here that the shared report / Client 360 hid, so the same client saw a
+      // peer comparison in the Monthly Strategist but not in the report.
+      signalByKey.set(spec.key, percentileAt(values, 0.75) > 0);
+    }
+
+    for (const clientId of clientIds) {
+      const metrics: MonthlyBenchmarkMetric[] = [];
+      for (const spec of BENCH_KEYS) {
+        const rawClient = g.perClient.get(clientId)?.get(spec.key) ?? 0;
+        if (!signalByKey.get(spec.key) && rawClient <= 0) continue; // no signal
+        const clientValue = spec.toDisplay(rawClient);
+        const median = spec.toDisplay(medianByKey.get(spec.key) ?? 0);
+        metrics.push({
+          key: spec.key,
+          label: spec.label,
+          clientValue,
+          median,
+          standing: benchStanding(clientValue, median),
+        });
+      }
+      if (metrics.length === 0) continue;
+      out.set(clientId, {
+        industryName,
+        sampleClients: clientIds.length,
+        metrics,
+      });
+    }
+  }
+  return out;
 }
 
 export async function buildAgencyMonthlyPack(
@@ -669,7 +844,17 @@ export async function buildAgencyMonthlyPack(
     order by name
   `) as unknown as ClientMetaRow[];
 
-  const clients = buildClients(clientMetaRows, projects, insights, revByClient);
+  // §P8-BENCH: anonymised industry benchmarks (same month window), one line per
+  // client whose industry cleared the ≥3-distinct-client floor.
+  const benchmarkByClient = await computeMonthlyBenchmarks(db, orgId, start, end);
+
+  const clients = buildClients(
+    clientMetaRows,
+    projects,
+    insights,
+    revByClient,
+    benchmarkByClient,
+  );
 
   // ── conversation digest (org-wide this month) + top clusters ────────────────
   const convoRows = (await client`
@@ -880,6 +1065,7 @@ function buildClients(
   projects: MonthlyProject[],
   insights: MonthlyInsight[],
   revByClient: Map<string, ClientRevenueRow>,
+  benchmarkByClient: Map<string, MonthlyClientBenchmark>,
 ): MonthlyClient[] {
   const projectsByClient = new Map<string, MonthlyProject[]>();
   for (const p of projects) {
@@ -964,6 +1150,7 @@ function buildClients(
       revenueTouchedPence,
       minutesSaved,
       topOpportunities,
+      benchmark: benchmarkByClient.get(meta.id) ?? null,
     });
   }
   return out;

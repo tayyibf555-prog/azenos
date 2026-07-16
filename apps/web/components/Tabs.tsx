@@ -14,8 +14,7 @@ export function Tabs({ tabs, activeKey }: { tabs: TabDef[]; activeKey: string })
     <div
       style={{
         display: "flex",
-        gap: 22,
-        borderBottom: "1px solid var(--border)",
+        gap: 6,
         overflowX: "auto",
       }}
     >

@@ -26,6 +26,29 @@ export interface DailyPackAnomaly {
   title: string;
 }
 
+/** yesterday's feedback_items counts by kind for one project. */
+export interface DailyPackFeedbackCounts {
+  bug: number;
+  feature: number;
+  question: number;
+  praise: number;
+  other: number;
+}
+
+export interface DailyPackNotableFeedback {
+  kind: string;
+  /** truncated to <= 140 chars (see FEEDBACK_MESSAGE_CAP) */
+  message: string;
+  severity: number | null;
+}
+
+/** Phase 7 §B3 — yesterday's feedback for one project (docs/phase7/PLAN.md). */
+export interface DailyPackFeedback {
+  yesterday: DailyPackFeedbackCounts;
+  /** up to 3 items, severity desc (nulls last) then most-recent first */
+  notable: DailyPackNotableFeedback[];
+}
+
 export interface DailyPackProject {
   id: string;
   name: string;
@@ -40,6 +63,7 @@ export interface DailyPackProject {
   hoursSinceLastEvent: number | null;
   openAnomalies: DailyPackAnomaly[];
   errorCountYesterday: number;
+  feedback: DailyPackFeedback;
 }
 
 export interface DailyPackAgency {

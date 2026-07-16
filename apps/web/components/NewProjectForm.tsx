@@ -318,13 +318,6 @@ function ManualProjectForm({
         />
       </div>
 
-      {stack === "ghl" && (
-        <p className="faint" style={{ fontSize: 12.5, margin: 0 }}>
-          GHL projects are issued a token-mode key so GoHighLevel&apos;s no-code
-          webhook can authenticate without signing.
-        </p>
-      )}
-
       {error && (
         <p style={{ color: "var(--red)", fontSize: 13, margin: 0 }}>{error}</p>
       )}

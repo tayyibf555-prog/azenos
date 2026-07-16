@@ -19,7 +19,7 @@
     "db:local": "bash scripts/db-local.sh",
     "db:local:down": "bash scripts/db-local-stop.sh",
     "db:local:docker": "docker compose -f docker-compose.dev.yml up -d",
-    "seed:demo": "pnpm --filter @azen/db seed:demo",
+    "seed:demo": "pnpm --filter @azen/db seed:demo && pnpm --filter @azen/web exec tsx scripts/health-run.ts",
     "simulate": "pnpm --filter @azen/db simulate"
   },
   "devDependencies": {

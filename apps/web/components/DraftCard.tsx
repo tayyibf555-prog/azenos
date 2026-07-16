@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { ProjectDraft } from "../lib/server/intake/schema";
 import { formatPence } from "../lib/format";
+import { getTrackingPlan } from "../lib/tracking-presets";
 import { COLORS, eventCategory, humanize, tint } from "./ui";
 
 /**
@@ -52,6 +53,8 @@ export function DraftCard({
 
   const c = draft.client;
   const clientColor = c.match === "existing" ? COLORS.green : COLORS.blue;
+  const trackingPlan = getTrackingPlan(draft.type);
+  const trackingCount = trackingPlan.required.length + trackingPlan.recommended.length;
 
   return (
     <div className="card" style={{ padding: 18, display: "grid", gap: 16 }}>
@@ -81,10 +84,20 @@ export function DraftCard({
         </div>
         <div
           className={fc("type") || fc("stack")}
-          style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 22 }}
+          style={{
+            display: "grid",
+            justifyItems: "end",
+            gap: 4,
+            paddingTop: 22,
+          }}
         >
-          <Pill color={COLORS.violet}>{humanize(draft.type)}</Pill>
-          <Pill color={COLORS.teal}>{humanize(draft.stack)}</Pill>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <Pill color={COLORS.violet}>{humanize(draft.type)}</Pill>
+            <Pill color={COLORS.teal}>{humanize(draft.stack)}</Pill>
+          </div>
+          <span className="faint" style={{ fontSize: 11.5 }}>
+            We&rsquo;ll track {trackingCount} events for this project type
+          </span>
         </div>
       </div>
 

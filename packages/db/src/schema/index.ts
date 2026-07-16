@@ -5,5 +5,7 @@ export * from "./events";
 export * from "./metrics";
 export * from "./money";
 export * from "./bookings";
+export * from "./feedback";
+export * from "./share";
 export * from "./agents";
 export * from "./ops";

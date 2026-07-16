@@ -50,6 +50,34 @@
       "when": 1783908744667,
       "tag": "0006_phase4-cost-markup",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784202412227,
+      "tag": "0007_calm_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784211356000,
+      "tag": "0008_woozy_wolverine",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784220992899,
+      "tag": "0009_gifted_nightcrawler",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784227491066,
+      "tag": "0010_share-token-hash-cost-spike",
+      "breakpoints": true
     }
   ]
 }

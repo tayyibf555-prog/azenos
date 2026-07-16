@@ -12,6 +12,7 @@
     "convo:run": "tsx src/cli/convo.ts",
     "scout:run": "tsx src/cli/scout.ts",
     "upsell:run": "tsx src/cli/upsell.ts",
+    "kb:run": "tsx src/cli/kb.ts",
     "learn:run": "tsx src/cli/learn.ts",
     "weekly:run": "tsx src/cli/weekly.ts",
     "monthly:run": "tsx src/cli/monthly.ts",

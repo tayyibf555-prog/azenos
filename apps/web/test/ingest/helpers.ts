@@ -73,7 +73,7 @@ export async function createHarness(
     name: projectName,
     slug: `ingest-test-${randomUUID()}`,
     type: "ai_agent",
-    stack: authMode === "token" ? "ghl" : "custom_code",
+    stack: "custom_code",
     status: "live",
   });
   await db.insert(projectKeys).values({

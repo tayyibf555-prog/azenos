@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, withErrorHandling } from "../../../../lib/server/http";
 import { requireOrgId } from "../../../../lib/server/org";
 import {
+  deleteProject,
   getProjectWithClient,
   listEventTypesSeen,
   listProjectKeys,
@@ -47,3 +48,14 @@ export const PATCH = withErrorHandling(async (req: Request, { params }: Ctx) => 
   if (!project) return jsonError(404, "project_not_found");
   return NextResponse.json({ project });
 });
+
+export const DELETE = withErrorHandling(
+  async (_req: Request, { params }: Ctx) => {
+    const orgId = await requireOrgId();
+    const { projectId } = await params;
+    if (!isUuid(projectId)) return jsonError(404, "project_not_found");
+    const deleted = await deleteProject(orgId, projectId);
+    if (!deleted) return jsonError(404, "project_not_found");
+    return NextResponse.json({ deleted: true, projectId });
+  },
+);

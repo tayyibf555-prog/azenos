@@ -106,7 +106,7 @@ export function ApiCostsCard({
           value={formatPence(clientSystem)}
           tone={COLORS.teal}
         />
-        <Cell label="OS agents" value={formatPence(osAgent)} tone={COLORS.violet} />
+        <Cell label="OS agents" value={formatPence(osAgent)} tone={COLORS.grey} />
       </div>
 
       <p className="faint" style={{ fontSize: 11.5, marginTop: 10, lineHeight: 1.45 }}>

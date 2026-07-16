@@ -12,16 +12,30 @@ import {
   projects,
   subscriptions,
 } from "@azen/db";
-import { InlineBrief } from "../components/InlineBrief";
-import { OverviewHealth } from "../components/OverviewHealth";
-import { PageHeader } from "../components/PageHeader";
-import { StatCard } from "../components/StatCard";
 import { Ticker } from "../components/Ticker";
+import { ProjectHealthTable } from "../components/ProjectHealthTable";
+import { OpenAnomaliesStat } from "../components/OpenAnomaliesStat";
+import { HealthAlertsCard } from "../components/HealthAlertsCard";
 import {
-  TodayColumn,
-  type TodayData,
-} from "../components/TodayColumn";
+  CountdownPill,
+  DataCard,
+  EmptyState,
+  EventChip,
+  IconSquircle,
+  List,
+  ListRow,
+  MiniCalendar,
+  PageShell,
+  Pill,
+  StatCell,
+  StatRow,
+  TopbarActions,
+  type CalendarEvent,
+  type SquircleTone,
+} from "../components/system";
+import { type TodayData } from "../components/TodayColumn";
 import { formatPence } from "../lib/format";
+import { humanize } from "../components/ui";
 import { requireOrgId } from "../lib/server/org";
 
 export const dynamic = "force-dynamic";
@@ -171,6 +185,23 @@ async function loadToday(orgId: string): Promise<TodayData> {
   };
 }
 
+const CONFIDENCE_TONE: Record<string, SquircleTone> = {
+  high: "rose",
+  med: "butter",
+  low: "graphite",
+};
+
+const londonHM = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/London",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+function hm(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : londonHM.format(d);
+}
+
 export default async function CommandCenter() {
   let overview: Overview | null = null;
   let today: TodayData | null = null;
@@ -185,20 +216,25 @@ export default async function CommandCenter() {
     dbError = err instanceof Error ? err.message : String(err);
   }
 
-  return (
-    <div>
-      <PageHeader
-        title="Command Center"
-        subtitle="How the whole agency is doing, right now."
-      />
+  const calendarEvents: CalendarEvent[] =
+    today?.calls.map((c) => ({ date: c.startsAt, tone: "mint" as const })) ?? [];
 
+  const needsYouCount =
+    (today?.newInsights.length ?? 0) + (today?.overduePayments.length ?? 0);
+
+  return (
+    <PageShell
+      crumbs={[{ label: "Azen AI", href: "/" }, { label: "Command Center" }]}
+      sectionIcon="grid"
+      actions={<TopbarActions notify={needsYouCount > 0} />}
+    >
       {dbError ? (
         <div
           className="card"
           style={{
             padding: 20,
-            borderColor: "rgba(247,118,142,0.3)",
-            background: "rgba(247,118,142,0.05)",
+            borderColor: "rgba(212,82,74,0.3)",
+            background: "rgba(212,82,74,0.06)",
           }}
         >
           <strong>Database not reachable.</strong>
@@ -216,75 +252,130 @@ export default async function CommandCenter() {
         </div>
       ) : (
         overview && (
-          <div style={{ display: "grid", gap: 22 }}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-                gap: 14,
-              }}
-            >
-              <StatCard
+          <div style={{ display: "grid", gap: 14 }}>
+            {/* §5 one compact stat strip */}
+            <StatRow>
+              <StatCell
                 label="Monthly recurring revenue"
                 value={formatPence(overview.mrrPence)}
-                accent="var(--green)"
+                hero
               />
-              <StatCard label="Active clients" value={overview.activeClients} />
-              <StatCard label="Live projects" value={overview.liveProjects} />
-              <StatCard
-                label="Events in the spine"
+              <StatCell
+                label="Active clients"
+                value={overview.activeClients.toLocaleString("en-GB")}
+              />
+              <StatCell
+                label="Live projects"
+                value={overview.liveProjects.toLocaleString("en-GB")}
+              />
+              <StatCell
+                label="Events in spine"
                 value={overview.eventsTotal.toLocaleString("en-GB")}
               />
-            </div>
+              <StatCell
+                label="Appointments this month"
+                value={overview.clientBookingsThisMonth.toLocaleString("en-GB")}
+              />
+              <OpenAnomaliesStat />
+            </StatRow>
 
-            <OverviewHealth />
+            {/* §5 2fr / 1fr dashboard grid */}
+            <div className="sys-dash-grid">
+              <div className="sys-col">
+                <DataCard
+                  title="Today — what needs you"
+                  caption="Insights to review and money to chase"
+                  icon="flag"
+                  tone="peach"
+                >
+                  {today && needsYouCount > 0 ? (
+                    <List>
+                      {today.newInsights.map((ins) => (
+                        <ListRow
+                          key={ins.id}
+                          href={`/projects/${ins.projectId}`}
+                          leading={
+                            <IconSquircle
+                              tone={CONFIDENCE_TONE[ins.confidence] ?? "graphite"}
+                              icon="bulb"
+                              size={28}
+                            />
+                          }
+                          primary={ins.title}
+                          secondary={`${humanize(ins.kind)} · ${ins.projectName}`}
+                          meta={
+                            <Pill tone={CONFIDENCE_TONE[ins.confidence] ?? "graphite"}>
+                              {ins.confidence}
+                            </Pill>
+                          }
+                        />
+                      ))}
+                      {today.overduePayments.map((p) => (
+                        <ListRow
+                          key={p.id}
+                          leading={<IconSquircle tone="rose" icon="pound" size={28} />}
+                          primary={p.clientName}
+                          secondary={`${humanize(p.kind)} · overdue`}
+                          meta={
+                            <span
+                              className="tnum"
+                              style={{ fontSize: 13, fontWeight: 600, color: "var(--red)" }}
+                            >
+                              {formatPence(p.amountPence)}
+                            </span>
+                          }
+                        />
+                      ))}
+                    </List>
+                  ) : (
+                    <EmptyState>Nothing needs you right now — you&apos;re clear.</EmptyState>
+                  )}
+                </DataCard>
 
-            <div
-              className="card"
-              style={{
-                padding: "18px 22px",
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                background:
-                  "linear-gradient(90deg, rgba(122,162,247,0.08), transparent 70%)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 34,
-                  fontWeight: 720,
-                  letterSpacing: "-0.02em",
-                  color: "var(--accent)",
-                }}
-              >
-                {overview.clientBookingsThisMonth.toLocaleString("en-GB")}
+                <DataCard
+                  title="Project health"
+                  caption="Live across every client system"
+                  icon="box"
+                  tone="sky"
+                >
+                  <ProjectHealthTable />
+                </DataCard>
+
+                <Ticker />
               </div>
-              <div style={{ fontSize: 14.5, lineHeight: 1.45 }}>
-                appointments our systems booked for clients this month.
-                <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
-                  Mirrored from every <code className="mono">booking.*</code>{" "}
-                  event across live projects.
-                </div>
+
+              <div className="sys-col">
+                <DataCard title="Calendar" icon="calendar" tone="lavender">
+                  <MiniCalendar events={calendarEvents} />
+                </DataCard>
+
+                <DataCard title="Upcoming calls" icon="phone" tone="mint">
+                  {today && today.calls.length > 0 ? (
+                    <div style={{ display: "grid", gap: 2 }}>
+                      {today.calls.map((c) => (
+                        <EventChip
+                          key={c.id}
+                          icon="phone"
+                          tone="mint"
+                          title={c.inviteeName ?? humanize(c.kind)}
+                          time={`${humanize(c.kind)} · ${hm(c.startsAt)}`}
+                          meta={<CountdownPill target={c.startsAt} />}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState>No discovery, kickoff or review calls today.</EmptyState>
+                  )}
+                </DataCard>
+
+                <DataCard title="Alerts" icon="alert" tone="rose">
+                  <HealthAlertsCard />
+                </DataCard>
               </div>
             </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                gap: 14,
-                alignItems: "start",
-              }}
-            >
-              {today && <TodayColumn data={today} />}
-              <InlineBrief />
-            </div>
-
-            <Ticker />
           </div>
         )
       )}
-    </div>
+    </PageShell>
   );
 }

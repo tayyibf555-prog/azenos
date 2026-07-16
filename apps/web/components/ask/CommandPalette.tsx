@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useDictation } from "../../lib/useDictation";
+import { COLORS, tint } from "../ui";
 import { deriveAskContext } from "./context";
+import { DictationMic } from "./DictationMic";
 import { MessageList } from "./MessageList";
+import { ASK_PALETTE_OPEN_EVENT } from "./paletteEvents";
 import { useAskChat } from "./useAskChat";
 
 /**
@@ -28,6 +32,13 @@ export function CommandPalette() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
 
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const dictation = useDictation({
+    getValue: useCallback(() => draftRef.current, []),
+    setValue: setDraft,
+  });
+
   // Global Cmd/Ctrl-K toggles the palette.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -38,6 +49,14 @@ export function CommandPalette() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Sidebar "Ask · ⌘K" affordance opens the palette the same way the
+  // keybinding does — via this event, so there's exactly one open path.
+  useEffect(() => {
+    const onOpenRequest = () => setOpen(true);
+    window.addEventListener(ASK_PALETTE_OPEN_EVENT, onOpenRequest);
+    return () => window.removeEventListener(ASK_PALETTE_OPEN_EVENT, onOpenRequest);
   }, []);
 
   // Focus management + body scroll lock while open.
@@ -129,7 +148,10 @@ export function CommandPalette() {
             alignItems: "flex-start",
             gap: 10,
             padding: "13px 14px",
-            borderBottom: hasMessages || chat.needsKey ? "1px solid var(--border)" : "none",
+            borderBottom:
+              hasMessages || chat.needsKey || dictation.error
+                ? "1px solid var(--border)"
+                : "none",
           }}
         >
           <svg
@@ -173,6 +195,7 @@ export function CommandPalette() {
               outline: "none",
             }}
           />
+          <DictationMic controller={dictation} />
           <button
             type="button"
             className="btn btn-primary btn-sm"
@@ -184,13 +207,22 @@ export function CommandPalette() {
           </button>
         </div>
 
+        {dictation.error && (
+          <p
+            className="faint"
+            style={{ padding: "0 14px 8px", fontSize: 11.5, marginTop: -6 }}
+          >
+            {dictation.error}
+          </p>
+        )}
+
         {chat.needsKey && (
           <div
             style={{
               padding: "10px 14px",
               fontSize: 12.5,
               color: "var(--amber)",
-              background: "rgba(217, 164, 65, 0.07)",
+              background: tint(COLORS.amber, 0.07),
               borderBottom: "1px solid var(--border)",
             }}
           >

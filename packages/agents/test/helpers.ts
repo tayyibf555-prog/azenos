@@ -5,6 +5,7 @@ import {
   clients,
   db,
   events,
+  feedbackItems,
   insights,
   metricDefinitions,
   metricRollups,
@@ -70,6 +71,7 @@ export async function cleanupHarness(h: AgentsHarness): Promise<void> {
   const c = db.$client;
   // FK-safe order: children first, then projects/clients, then the org.
   await c`delete from agent_runs where org_id = ${h.orgId}::uuid`;
+  await c`delete from feedback_items where org_id = ${h.orgId}::uuid`;
   await c`delete from events where org_id = ${h.orgId}::uuid`;
   await c`delete from insights where org_id = ${h.orgId}::uuid`;
   await c`delete from metric_rollups where org_id = ${h.orgId}::uuid`;
@@ -291,6 +293,49 @@ export async function insertActiveSubscription(
     amountPenceMonthly,
     status: "active",
     startedAt: "2026-01-01",
+  });
+}
+
+/**
+ * Hand-build a feedback_items row (Phase 7 §B3) plus its backing
+ * feedback.submitted event (event_id is NOT NULL / FK'd), mirroring how the
+ * public feedback webhook writes both in one transaction. createdAt controls
+ * the day/window the pack query buckets it into.
+ */
+export async function insertFeedbackItem(
+  orgId: string,
+  projectId: string,
+  fb: {
+    kind: "bug" | "feature" | "question" | "praise" | "other";
+    message: string;
+    severity?: number | null;
+    createdAt: Date;
+  },
+): Promise<void> {
+  const eventId = randomUUID();
+  await db.insert(events).values({
+    id: eventId,
+    orgId,
+    projectId,
+    type: "feedback.submitted",
+    source: "feedback",
+    idempotencyKey: `test:${randomUUID()}`,
+    occurredAt: fb.createdAt,
+    receivedAt: fb.createdAt,
+    data: {},
+    valuePence: null,
+    minutesSaved: null,
+    raw: {},
+  });
+  await db.insert(feedbackItems).values({
+    orgId,
+    projectId,
+    eventId,
+    kind: fb.kind,
+    message: fb.message,
+    severity: fb.severity ?? null,
+    status: "new",
+    createdAt: fb.createdAt,
   });
 }
 

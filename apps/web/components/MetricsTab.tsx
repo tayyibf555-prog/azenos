@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AddMetricModal } from "./AddMetricModal";
+import { MetricDiscoveryPanel } from "./MetricDiscoveryPanel";
 import { LineChart } from "./charts/LineChart";
 import {
   deltaColor,
@@ -13,6 +14,8 @@ import {
   recommendedGranularity,
 } from "./charts/util";
 import { COLORS, tint } from "./ui";
+import { StatTile } from "./analytics/StatTile";
+import { ExpandableChart } from "./analytics/ExpandableChart";
 import type {
   ApiErrorShape,
   MetricDefinition,
@@ -365,12 +368,24 @@ export function MetricsTab({ projectId }: { projectId: string }) {
           gap: 10,
         }}
       >
-        <div style={{ display: "flex", gap: 4 }}>
+        <div
+          className="card"
+          style={{ display: "inline-flex", padding: 3, gap: 2, borderRadius: 10 }}
+          role="group"
+          aria-label="Date range"
+        >
           {(["7d", "30d", "90d", "custom"] as Range[]).map((r) => (
             <button
               key={r}
               type="button"
-              className={range === r ? "btn btn-sm btn-primary" : "btn btn-sm"}
+              className={range === r ? "nav-item nav-item-active" : "nav-item"}
+              style={{
+                padding: "5px 12px",
+                cursor: "pointer",
+                background: range === r ? undefined : "transparent",
+                fontSize: 12.5,
+              }}
+              aria-pressed={range === r}
               onClick={() => {
                 setRange(r);
                 setGranOverride(null);
@@ -443,6 +458,12 @@ export function MetricsTab({ projectId }: { projectId: string }) {
           + Add metric
         </button>
       </div>
+
+      {/* ── available-to-add (§P9-W0B) ── */}
+      <MetricDiscoveryPanel
+        projectId={projectId}
+        onAdded={() => setRefreshKey((n) => n + 1)}
+      />
 
       {/* ── metric chips ── */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
@@ -554,14 +575,20 @@ export function MetricsTab({ projectId }: { projectId: string }) {
             const points = readyData?.series?.[key] ?? [];
             const cmp = readyData?.compare?.[key] ?? null;
             const color = metricColor(i);
+            // Numbers first (§Numbers first): the card's own headline is the
+            // latest bucket + its Δ vs the previous bucket in THIS series (the
+            // selected range/granularity/compare window) — not the day-only KPI
+            // strip's number above, which is a different, fixed window.
+            const last = points[points.length - 1] ?? null;
+            const prior = points.length >= 2 ? points[points.length - 2] : null;
+            const latestDelta = last && prior ? last.value - prior.value : null;
             return (
-              <section className="card" key={key} style={{ padding: 16 }}>
+              <section className="card" key={key} style={{ padding: 16, display: "grid", gap: 12 }}>
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
-                    marginBottom: 10,
                   }}
                 >
                   <span className="dot" style={{ background: color }} />
@@ -572,13 +599,25 @@ export function MetricsTab({ projectId }: { projectId: string }) {
                     {m?.aggregation} · {granularity}
                   </span>
                 </div>
-                <LineChart
-                  points={points}
-                  comparePoints={compare ? cmp : null}
-                  color={color}
-                  unit={m?.unit ?? "count"}
-                  period={granularity}
+                <StatTile
+                  label="Latest"
+                  value={formatMetricValue(last?.value, m?.unit ?? "count")}
+                  delta={latestDelta}
+                  deltaLabel={latestDelta !== null ? formatDelta(latestDelta, m?.unit ?? "count") : undefined}
+                  goodDirection={m?.goodDirection ?? "up"}
+                  sub={`vs prior ${granularity}`}
+                  sparkline={points.map((p) => p.value)}
+                  sparkColor={color}
                 />
+                <ExpandableChart label="chart">
+                  <LineChart
+                    points={points}
+                    comparePoints={compare ? cmp : null}
+                    color={color}
+                    unit={m?.unit ?? "count"}
+                    period={granularity}
+                  />
+                </ExpandableChart>
               </section>
             );
           })}

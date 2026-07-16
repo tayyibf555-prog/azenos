@@ -185,8 +185,8 @@ The server rejects timestamps outside ±300s (replay protection).
 
 ### Token mode
 
-For no-code callers that can't sign (e.g. GHL webhook actions), a project key
-can be issued with `auth_mode = 'token'`. Construct the client with
+For no-code callers that can't sign (e.g. a no-code workflow tool's webhook
+action), a project key can be issued with `auth_mode = 'token'`. Construct the client with
 `authMode: 'token'` and the SDK sends the secret as a header instead of
 signing:
 

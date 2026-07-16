@@ -16,6 +16,8 @@ export interface IngestKey {
   clientId: string;
   projectName: string;
   authMode: "hmac" | "token";
+  /** Phase 7 §B least privilege: only 'ingest' keys may drive this route. */
+  kind: "ingest" | "feedback";
   rateLimitPer10s: number;
   secretHash: string;
   secretCiphertext: string;
@@ -31,6 +33,7 @@ export async function lookupKey(publicKey: string): Promise<IngestKey | null> {
       clientId: projects.clientId,
       projectName: projects.name,
       authMode: projectKeys.authMode,
+      kind: projectKeys.kind,
       rateLimitPer10s: projectKeys.rateLimitPer10s,
       secretHash: projectKeys.secretHash,
       secretCiphertext: projectKeys.secretCiphertext,

@@ -141,7 +141,7 @@ describe("POST /api/ingest/[publicKey]", () => {
     expect(stale!.status).toBe("rejected");
   });
 
-  it("authenticates token-mode keys and stores source ghl", async () => {
+  it("authenticates token-mode keys and stores source sdk", async () => {
     const tokenHarness = await createHarness({ authMode: "token" });
     try {
       const event = makeEvent("form.submitted", {
@@ -159,7 +159,7 @@ describe("POST /api/ingest/[publicKey]", () => {
             eq(events.idempotencyKey, String(event.idempotency_key)),
           ),
         );
-      expect(row!.source).toBe("ghl");
+      expect(row!.source).toBe("sdk");
 
       const bad = await sendIngest(tokenHarness, makeEvent("form.submitted"), {
         token: "azn_sk_not_the_secret",

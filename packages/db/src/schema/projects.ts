@@ -12,8 +12,10 @@ import {
 } from "drizzle-orm/pg-core";
 import { clients, organizations } from "./core";
 import {
+  credentialProvider,
   integrationProvider,
   keyAuthMode,
+  keyKind,
   projectHealth,
   projectStack,
   projectStatus,
@@ -57,6 +59,13 @@ export const projects = pgTable(
     goals: jsonb("goals").$type<ProjectGoal[]>().notNull().default([]),
     // §8.1/§10 time-value rate; null = config DEFAULT_HOURLY_RATE_PENCE (£30/h)
     hourlyRatePence: integer("hourly_rate_pence"),
+    // Phase 8 §P8-HEALTH: per-project SLOs; null = platform defaults. The
+    // health evaluator derives the OBJECTIVE health badge from these.
+    slo: jsonb("slo").$type<{
+      error_rate_pct?: number;
+      p95_ms?: number;
+      heartbeat_gap_minutes?: number;
+    }>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -82,6 +91,10 @@ export const projectKeys = pgTable(
     // recoverable secret (§6.2); see @azen/db/keys and docs/DECISIONS.md
     secretCiphertext: text("secret_ciphertext").notNull().default(""),
     authMode: keyAuthMode("auth_mode").notNull().default("hmac"),
+    // Phase 7 §B: least privilege. 'ingest' keys work ONLY on the ingest
+    // route; 'feedback' keys ONLY on /api/feedback/[publicKey] (public,
+    // browser-embeddable, no secret shipped). Each route rejects the other.
+    kind: keyKind("kind").notNull().default("ingest"),
     // §6.3 step 2 — default 100 req/10s, configurable per project
     rateLimitPer10s: integer("rate_limit_per_10s").notNull().default(100),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
@@ -117,4 +130,32 @@ export const projectIntegrations = pgTable(
   (t) => [
     index("project_integrations_provider_idx").on(t.provider, t.externalId),
   ],
+);
+
+// Phase 7 §C (docs/phase7/PLAN.md) — the per-project Connections vault.
+// Owner-entered third-party keys (Anthropic / OpenAI / Twilio / Higgsfield /
+// custom) for THIS client project. Ciphertext is AES-256-GCM under
+// INGEST_SECRET_ENC_KEY (the proven @azen/db/keys scheme); plaintext is never
+// returned by any API — list responses carry provider/label/last4 only.
+export const projectCredentials = pgTable(
+  "project_credentials",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    provider: credentialProvider("provider").notNull(),
+    label: text("label").notNull(),
+    ciphertext: text("ciphertext").notNull(),
+    // last 4 chars of the secret, for masked display (····4f2a) — never more
+    last4: text("last4").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [index("project_credentials_project_idx").on(t.orgId, t.projectId)],
 );

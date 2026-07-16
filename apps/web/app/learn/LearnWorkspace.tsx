@@ -68,6 +68,7 @@ export function LearnWorkspace({
   );
 
   const activeIndustry = industries.find((i) => i.id === activeId) ?? null;
+  const totalArticles = industries.reduce((sum, i) => sum + i.articleCount, 0);
 
   const selectIndustry = useCallback(async (id: string): Promise<void> => {
     setActiveId(id);
@@ -141,14 +142,28 @@ export function LearnWorkspace({
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 240px) minmax(0, 1fr)",
-        gap: 20,
-        alignItems: "start",
-      }}
-    >
+    <div style={{ display: "grid", gap: 18 }}>
+      <div className="card" style={{ padding: "14px 18px", display: "flex", alignItems: "baseline", gap: 20 }}>
+        <div>
+          <span className="accent-num tnum" style={{ fontSize: 26, fontWeight: 660 }}>
+            {totalArticles}
+          </span>
+          <span className="muted" style={{ fontSize: 12.5, marginLeft: 8 }}>
+            article{totalArticles === 1 ? "" : "s"} distilled
+          </span>
+        </div>
+        <span className="faint tnum" style={{ fontSize: 12.5 }}>
+          across {industries.length} industr{industries.length === 1 ? "y" : "ies"}
+        </span>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 240px) minmax(0, 1fr)",
+          gap: 20,
+          alignItems: "start",
+        }}
+      >
       {/* ── industry index ─────────────────────────────────────────────── */}
       <aside className="card" style={{ padding: 8, position: "sticky", top: 16 }}>
         <div
@@ -195,7 +210,7 @@ export function LearnWorkspace({
                 >
                   {ind.name}
                 </span>
-                <span className="faint" style={{ fontSize: 11 }}>
+                <span className="faint tnum" style={{ fontSize: 11 }}>
                   {ind.articleCount} article{ind.articleCount === 1 ? "" : "s"}
                   {ind.lastUpdated ? ` · ${formatLondonDate(ind.lastUpdated)}` : ""}
                 </span>
@@ -214,15 +229,7 @@ export function LearnWorkspace({
           placeholder="Search the knowledge base — e.g. 'when do dental bookings peak?'"
           aria-label="Search the knowledge base"
           className="input"
-          style={{
-            width: "100%",
-            padding: "10px 14px",
-            fontSize: 13.5,
-            borderRadius: 10,
-            background: "var(--panel)",
-            border: "1px solid var(--border)",
-            color: "var(--text)",
-          }}
+          style={{ fontSize: 13.5 }}
         />
 
         {isSearchMode ? (
@@ -240,6 +247,7 @@ export function LearnWorkspace({
           />
         )}
       </section>
+      </div>
     </div>
   );
 }
@@ -287,7 +295,7 @@ function IndustryArticles({
     <div style={{ display: "grid", gap: 14 }}>
       <div style={{ fontSize: 15, fontWeight: 650 }}>
         {industry.name}{" "}
-        <span className="faint" style={{ fontWeight: 400, fontSize: 13 }}>
+        <span className="faint tnum" style={{ fontWeight: 400, fontSize: 13 }}>
           · {articles.length} article{articles.length === 1 ? "" : "s"}
         </span>
       </div>
@@ -408,7 +416,7 @@ function SearchResults({
             </div>
           </div>
           <Markdown source={h.bodyMd} />
-          <span className="faint" style={{ fontSize: 11 }}>
+          <span className="faint tnum" style={{ fontSize: 11 }}>
             similarity {(h.score * 100).toFixed(0)}%
           </span>
         </article>

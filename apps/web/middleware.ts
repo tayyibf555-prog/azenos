@@ -2,6 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // Public client share links (§P8-REPORT): logged-out, READ-ONLY, and never
+  // indexed. Skip the auth wall entirely and stamp X-Robots-Tag so the page is
+  // unreachable to crawlers regardless of auth mode.
+  if (request.nextUrl.pathname.startsWith("/share/")) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
+
   // Local demo mode: no hosted Supabase project yet → no auth wall (§15 note:
   // v1 enforcement is app-layer; this activates the moment env vars exist)
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {

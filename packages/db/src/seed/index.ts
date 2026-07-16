@@ -13,7 +13,12 @@ import {
   OWNER,
   PROJECTS,
 } from "./demo-data";
-import { generateAgencyCalendlyDay, generateProjectDay } from "./generators";
+import {
+  generateAgencyCalendlyDay,
+  generateProjectDay,
+  generateProjectFeedback,
+  type FeedbackSeed,
+} from "./generators";
 import { runRollups } from "../rollup/engine";
 import { Rng } from "./rng";
 import { londonDayUTC, londonMonthStartUTC } from "./time";
@@ -39,7 +44,7 @@ interface EventRow {
   orgId: string;
   projectId: string | null;
   type: string;
-  source: "sdk" | "calendly";
+  source: "sdk" | "calendly" | "feedback";
   idempotencyKey: string;
   occurredAt: Date;
   receivedAt: Date;
@@ -55,7 +60,7 @@ interface EventRow {
 function toRow(
   input: EventInput,
   projectId: string | null,
-  source: "sdk" | "calendly",
+  source: "sdk" | "calendly" | "feedback",
 ): EventRow {
   const parsed = parseEvent(input);
   if (!parsed.ok) {
@@ -93,6 +98,7 @@ async function main() {
       webhook_deliveries, alert_rules,
       chat_messages, chat_sessions, agent_runs, knowledge_articles,
       upsell_proposals, insights, briefs,
+      feedback_items,
       bookings, expenses, subscriptions, payments,
       metric_rollups, metric_definitions, events,
       project_integrations, project_keys, projects,
@@ -158,20 +164,27 @@ async function main() {
       publicKey: p.publicKey,
       secretHash: sha256(p.demoSecret),
       secretCiphertext: encryptSecret(p.demoSecret),
-      authMode: (p.stack === "ghl" ? "token" : "hmac") as "token" | "hmac",
+      authMode: "hmac" as const,
+      kind: "ingest" as const,
       label: "demo key",
     })),
   );
 
-  await db.insert(s.projectIntegrations).values([
-    {
+  // Phase 7 §B: a PUBLIC feedback-widget key per project (deterministic public
+  // key, no secret shipped). Powers the embeddable widget + Analytics→Feedback.
+  const feedbackPublicKeyFor = (slug: string) =>
+    `azn_fb_demo_${slug.replace(/-/g, "_")}`;
+  await db.insert(s.projectKeys).values(
+    PROJECTS.map((p) => ({
       orgId: ORG_ID,
-      projectId: PROJECTS[2]!.id,
-      provider: "ghl" as const,
-      externalId: "loc_demo_elitetrades",
-      config: { mapping: "ghl-default-v1" },
-    },
-  ]);
+      projectId: p.id,
+      publicKey: feedbackPublicKeyFor(p.slug),
+      secretHash: sha256(`feedback:${p.slug}`),
+      authMode: "token" as const,
+      kind: "feedback" as const,
+      label: "feedback widget key",
+    })),
+  );
 
   // ── metric definitions + alert rules (org defaults) ──────────────────────
   await db.insert(s.metricDefinitions).values(
@@ -215,6 +228,22 @@ async function main() {
       }
     }
     perProjectCounts[project.slug] = count;
+  }
+
+  // Phase 7 §B: feedback.submitted events + their triage-mirror seeds. Emitted
+  // per project over the last 30 days; the mirror rows are built after the
+  // events insert so they can reference the real event ids.
+  const feedbackNow = new Date();
+  const feedbackByRow = new Map<string, FeedbackSeed>();
+  const feedbackCounts: Record<string, number> = {};
+  for (const project of PROJECTS) {
+    const seeds = generateProjectFeedback(project, feedbackNow);
+    feedbackCounts[project.slug] = seeds.length;
+    for (const seed of seeds) {
+      const row = toRow(seed.input, project.id, "feedback");
+      allRows.push(row);
+      feedbackByRow.set(row.id, seed);
+    }
   }
 
   // agency Calendly events (org-level: project_id null)
@@ -267,6 +296,119 @@ async function main() {
     await db.insert(s.bookings).values(bookingRows.slice(i, i + 500));
   }
 
+  // mirror feedback.submitted → feedback_items (Phase 7 §B triage board)
+  const feedbackItemRows: (typeof s.feedbackItems.$inferInsert)[] = allRows
+    .filter((r) => r.type === "feedback.submitted")
+    .map((r) => {
+      const seed = feedbackByRow.get(r.id)!;
+      return {
+        orgId: ORG_ID,
+        projectId: r.projectId!,
+        eventId: r.id,
+        kind: seed.kind,
+        message: seed.message,
+        severity: seed.severity ?? null,
+        submitterName: seed.submitterName ?? null,
+        submitterEmail: seed.submitterEmail ?? null,
+        pageUrl: seed.pageUrl,
+        status: seed.status,
+        createdAt: r.occurredAt,
+      };
+    });
+  for (let i = 0; i < feedbackItemRows.length; i += 500) {
+    await db.insert(s.feedbackItems).values(feedbackItemRows.slice(i, i + 500));
+  }
+
+  // ── KB-gap opportunities (Phase 9 §P9-KB) ────────────────────────────────
+  // The KB-gap miner + Scout only WRITE automation_opportunity insights through
+  // the LLM chassis (runAgent, gated on ANTHROPIC_API_KEY). A keyless demo would
+  // therefore show an empty Growth pipeline. Seed the deterministic content-gap
+  // opportunities straight from the conversation projects' mishandled
+  // (escalated / abandoned / negative) `llm.conversation` events, so the Growth
+  // funnel + KB-gap surface are demo-able without a key. Fingerprints match the
+  // miner's `kbgap:<projectId>:<slug>` scheme, so a later real run UPDATES these
+  // rows in place instead of duplicating them.
+  const KB_GAP_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+  const kbCutoff = new Date(now.getTime() - KB_GAP_WINDOW_MS);
+  const gapSlug = (raw: string) =>
+    raw.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+    "content-gap";
+  const insightRows: (typeof s.insights.$inferInsert)[] = [];
+  for (const proj of PROJECTS) {
+    const convos = allRows.filter(
+      (r) =>
+        r.projectId === proj.id &&
+        r.type === "llm.conversation" &&
+        r.occurredAt >= kbCutoff,
+    );
+    if (convos.length === 0) continue;
+    const byIntent = new Map<
+      string,
+      { total: number; mishandled: number; ids: string[]; topics: Set<string> }
+    >();
+    for (const r of convos) {
+      const intent = String(r.data.intent ?? "unspecified") || "unspecified";
+      const resolution = String(r.data.resolution ?? "");
+      const sentiment = String(r.data.sentiment ?? "");
+      const mishandled =
+        resolution === "escalated" || resolution === "abandoned" || sentiment === "negative";
+      const g =
+        byIntent.get(intent) ?? { total: 0, mishandled: 0, ids: [], topics: new Set<string>() };
+      g.total += 1;
+      if (mishandled) {
+        g.mishandled += 1;
+        if (g.ids.length < 5) g.ids.push(r.id);
+      }
+      for (const t of Array.isArray(r.data.topics) ? r.data.topics : []) {
+        g.topics.add(String(t));
+      }
+      byIntent.set(intent, g);
+    }
+    const ranked = [...byIntent.entries()]
+      .filter(([, g]) => g.mishandled >= 3)
+      .sort(
+        (a, b) =>
+          b[1].mishandled - a[1].mishandled ||
+          b[1].total - a[1].total ||
+          a[0].localeCompare(b[0]),
+      )
+      .slice(0, 2);
+    for (const [intent, g] of ranked) {
+      const label = intent.replace(/_/g, " ");
+      const hoursSaved = Math.max(1, Math.round(g.mishandled * 0.4));
+      const valuePence = g.mishandled * 2_500;
+      insightRows.push({
+        orgId: ORG_ID,
+        projectId: proj.id,
+        kind: "automation_opportunity",
+        title: `Knowledge-base article: ${label}`,
+        bodyMd: `${g.mishandled} of ${g.total} “${label}” conversations in the last 30 days escalated, were abandoned, or came back negative. A dedicated knowledge-base article plus a bot-improvement brief would let the agent resolve these end-to-end — recovering roughly ${hoursSaved}h of human handling a month.`,
+        evidence: {
+          content_gap: true,
+          event_ids: g.ids,
+          intent,
+          question: `Recurring “${label}” questions the agent handles badly`,
+          aggregates: {
+            total: g.total,
+            gap_signals: g.mishandled,
+            estimated_hours_saved_monthly: hoursSaved,
+            estimated_value_pence: valuePence,
+          },
+          topics: [...g.topics].slice(0, 8),
+        },
+        fingerprint: `kbgap:${proj.id}:${gapSlug(intent)}`,
+        estimatedValuePence: valuePence,
+        estimatedHoursSavedMonthly: hoursSaved,
+        confidence: g.mishandled >= 8 ? "high" : "med",
+        status: "new",
+        createdBy: "agent",
+      });
+    }
+  }
+  if (insightRows.length > 0) {
+    await db.insert(s.insights).values(insightRows);
+  }
+
   // ── agency money: build fees, retainers, subscriptions, expenses ─────────
   const payRng = new Rng("payments");
   const paymentRows: (typeof s.payments.$inferInsert)[] = [];
@@ -291,7 +433,7 @@ async function main() {
       orgId: ORG_ID,
       clientId: p.clientId,
       projectId: p.id,
-      stripeSubscriptionId: p.stack === "ghl" ? null : `sub_demo_${p.slug}`,
+      stripeSubscriptionId: `sub_demo_${p.slug}`,
       amountPenceMonthly: p.retainerPenceMonthly,
       status: "active",
       startedAt: isoDate(dayAtMidnightUTC(p.liveDaysAgo)),
@@ -309,7 +451,7 @@ async function main() {
         orgId: ORG_ID,
         clientId: p.clientId,
         projectId: p.id,
-        source: p.stack === "ghl" ? "bank_transfer" : "stripe",
+        source: "stripe",
         kind: "retainer",
         amountPence: p.retainerPenceMonthly,
         status: "paid",
@@ -354,6 +496,12 @@ async function main() {
   // (this also runs the anomaly detector, seeding a few insights).
   const rollup = await runRollups(db, { orgId: ORG_ID, force: true });
 
+  // Health evaluation is NOT run inline here: the evaluator lives web-side
+  // (apps/web/lib/server/health/evaluate.ts, which pulls in @azen/agents) and
+  // @azen/db must not take a reverse dependency on the app. Instead the root
+  // `seed:demo` script chains `health-run.ts` after this seed so a fresh DB
+  // opens the Health Center with alert_instances that match the derived grid.
+
   // ── summary ───────────────────────────────────────────────────────────────
   console.log(`Org: Azen AI (${ORG_ID})`);
   console.log(`Owner: ${OWNER.email}`);
@@ -365,6 +513,11 @@ async function main() {
   console.log(`  ${"agency (calendly)".padEnd(30)} ${agencyInvitees.length}`);
   console.log(`  total: ${allRows.length}`);
   console.log(`\nBookings mirrored: ${bookingRows.length}`);
+  console.log(
+    `Feedback: ${feedbackItemRows.length} items (${Object.entries(feedbackCounts)
+      .map(([slug, n]) => `${slug}:${n}`)
+      .join(", ")})`,
+  );
   console.log(`Payments: ${paymentRows.length}, Subscriptions: ${subscriptionRows.length}, Expenses: ${expenseRows.length}`);
   console.log(`Rollups: ${rollup.bucketsRecomputed} buckets across ${rollup.projects} projects, ${rollup.anomaliesCreated} anomalies`);
   console.log("\nDemo webhook keys (LOCAL DEMO ONLY):");

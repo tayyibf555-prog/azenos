@@ -1,6 +1,7 @@
 "use client";
 
 import { Markdown } from "../Markdown";
+import { COLORS, tint } from "../ui";
 import { AnswerTrace } from "./AnswerTrace";
 import type { ChatMessage } from "./types";
 
@@ -67,10 +68,10 @@ function AssistantBubble({ msg }: { msg: ChatMessage }) {
             width: 18,
             height: 18,
             borderRadius: 5,
-            background: "linear-gradient(135deg, #7aa2f7, #bb9af7)",
+            background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
             display: "grid",
             placeItems: "center",
-            color: "#0b0e14",
+            color: "var(--bg)",
             fontWeight: 800,
             fontSize: 10,
             flex: "none",
@@ -116,8 +117,8 @@ function AssistantBubble({ msg }: { msg: ChatMessage }) {
               gap: 8,
               fontSize: 12.5,
               color: "var(--amber)",
-              background: "rgba(217, 164, 65, 0.08)",
-              border: "1px solid rgba(217, 164, 65, 0.22)",
+              background: tint(COLORS.amber, 0.08),
+              border: `1px solid ${tint(COLORS.amber, 0.22)}`,
               borderRadius: "var(--radius-sm)",
               padding: "8px 11px",
             }}

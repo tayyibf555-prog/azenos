@@ -10,7 +10,12 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./core";
-import { alertChannel, alertKind, deliveryStatus } from "./enums";
+import {
+  alertChannel,
+  alertKind,
+  alertSeverity,
+  deliveryStatus,
+} from "./enums";
 import { events } from "./events";
 import { projectKeys } from "./projects";
 import { projects } from "./projects";
@@ -96,4 +101,38 @@ export const alertRules = pgTable(
       .defaultNow(),
   },
   (t) => [index("alert_rules_project_idx").on(t.projectId, t.enabled)],
+);
+
+// Phase 8 §P8-HEALTH (docs/phase8/CONTRACTS.md) — alert_instances: the actual
+// firings the Health Center grid shows and acks/resolves. alert_rules define
+// WHEN to fire; instances record each breach. The evaluator dedupes on an open
+// instance of the same kind+project and auto-resolves when the condition
+// clears; ack/resolve are the only UI mutations.
+export const alertInstances = pgTable(
+  "alert_instances",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    // null = org-level (e.g. agency-wide cost spike)
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    kind: alertKind("kind").notNull(),
+    severity: alertSeverity("severity").notNull().default("warn"),
+    message: text("message").notNull(),
+    evidence: jsonb("evidence")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    firedAt: timestamp("fired_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ackedAt: timestamp("acked_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("alert_instances_open_idx").on(t.orgId, t.resolvedAt, t.firedAt),
+  ],
 );

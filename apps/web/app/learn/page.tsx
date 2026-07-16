@@ -1,3 +1,4 @@
+import { ActivationBanner } from "../../components/ActivationBanner";
 import { PageHeader } from "../../components/PageHeader";
 import {
   getIndustriesWithArticles,
@@ -32,12 +33,20 @@ export default async function LearnPage() {
     error = "Could not load the knowledge base.";
   }
 
+  const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  const hasVoyageKey = Boolean(process.env.VOYAGE_API_KEY?.trim());
+  const missingKeys = [
+    ...(hasAnthropicKey ? [] : ["ANTHROPIC_API_KEY"]),
+    ...(hasVoyageKey ? [] : ["VOYAGE_API_KEY"]),
+  ];
+
   return (
     <div>
       <PageHeader
         title="Learn"
         subtitle="What Azen OS has learned across every client in each industry — searchable, evidence-backed, reusable."
       />
+      <ActivationBanner missing={missingKeys} />
       {error ? (
         <div className="card" style={{ padding: 20 }}>
           <span className="muted" style={{ fontSize: 13.5 }}>

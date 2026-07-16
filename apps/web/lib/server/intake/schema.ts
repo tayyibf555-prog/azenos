@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { projectStack, projectType } from "@azen/db";
+import { getTrackingPlan, type TrackingPreset } from "../../tracking-presets";
 
 /**
  * Transcript-intake wire contract (docs/phase2/CONTRACTS.md §Transcript
@@ -58,12 +59,21 @@ export type RefineOutput = z.infer<typeof refineOutputSchema>;
 export interface IntakeResponse {
   draft: ProjectDraft;
   runId: string;
+  /** The baseline tracking plan for `draft.type` (task T1) — attached so the
+   * review UI can show "we'll track these N events" without a second call. */
+  trackingPlan: TrackingPreset;
 }
 
 export interface RefineResponse {
   draft: ProjectDraft;
   note: string;
   runId: string;
+  trackingPlan: TrackingPreset;
+}
+
+/** Shared by both intake routes: attach the preset for the drafted type. */
+export function trackingPlanForDraft(draft: ProjectDraft): TrackingPreset {
+  return getTrackingPlan(draft.type);
 }
 
 // ── §8.1 goal metric keys the agent may target ──────────────────────────────

@@ -42,6 +42,12 @@ export interface ProposalItem {
   expectedRoiNote: string | null;
   evidenceEvents: EvidenceEvent[];
   createdAt: string;
+  /** Phase 8 §P8-GROWTH2 — latest `proposal` share token's stats (0 / null if never sent). */
+  viewCount: number;
+  lastViewedAt: string | null;
+  /** Latest `proposal` share token id (null if never sent) — for the owner-only
+   * "copy link again" reveal. Never the token itself. */
+  shareTokenId: string | null;
 }
 
 export interface GrowthSummary {

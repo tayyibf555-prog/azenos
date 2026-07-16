@@ -9,6 +9,7 @@ import { runIntakeAgent } from "../../../../lib/server/intake/run";
 import {
   finalizeDraft,
   projectDraftSchema,
+  trackingPlanForDraft,
   type ClientRef,
 } from "../../../../lib/server/intake/schema";
 
@@ -42,8 +43,10 @@ export const POST = withErrorHandling(async (req: Request) => {
   });
   if (!result.ok) return jsonError(result.status, result.error);
 
+  const draft = finalizeDraft(result.parsed, clients);
   return NextResponse.json({
-    draft: finalizeDraft(result.parsed, clients),
+    draft,
     runId: result.runId,
+    trackingPlan: trackingPlanForDraft(draft),
   });
 });

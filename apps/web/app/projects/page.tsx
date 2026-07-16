@@ -9,7 +9,8 @@ import {
   SparklineStrip,
 } from "../../components/SparklineStrip";
 import { StatusPill } from "../../components/StatusPill";
-import { humanize, tint } from "../../components/ui";
+import { DeleteProjectButton } from "../../components/DeleteProjectButton";
+import { COLORS, humanize, tint } from "../../components/ui";
 import { daysSince, formatPence } from "../../lib/format";
 import { requireOrgId } from "../../lib/server/org";
 
@@ -119,8 +120,14 @@ export default async function ProjectsPage() {
               p.lastEventAt !== null &&
               silentMs > 86_400_000;
             return (
+              <div key={p.id} className="card-wrap">
+                <div className="card-actions">
+                  <DeleteProjectButton
+                    projectId={p.id}
+                    projectName={p.name}
+                  />
+                </div>
               <Link
-                key={p.id}
                 href={`/projects/${p.id}`}
                 className="card hoverable"
                 style={{
@@ -199,8 +206,8 @@ export default async function ProjectsPage() {
                         className="badge"
                         style={{
                           color: "var(--red)",
-                          background: tint("#f7768e", 0.12),
-                          borderColor: tint("#f7768e", 0.3),
+                          background: tint(COLORS.red, 0.12),
+                          borderColor: tint(COLORS.red, 0.3),
                         }}
                       >
                         ● silent {Math.max(1, daysSince(p.lastEventAt!))}d
@@ -216,6 +223,7 @@ export default async function ProjectsPage() {
                   <ProjectSparkline projectId={p.id} />
                 </div>
               </Link>
+              </div>
             );
           })}
         </div>

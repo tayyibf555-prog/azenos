@@ -231,7 +231,18 @@ export const exampleEvents: Record<KnownEventType, EventInput> = {
   },
   "integration.disconnected": {
     ...base("integration.disconnected", 1),
-    data: { provider: "ghl", reason: "oauth token expired" },
+    data: { provider: "sdk", reason: "oauth token expired" },
+  },
+
+  "feedback.submitted": {
+    ...base("feedback.submitted", 1),
+    data: {
+      kind: "bug",
+      message: "The booking confirmation button does nothing on my phone.",
+      severity: 2,
+      submitter: { name: "Reception", email: "front-desk@clinic.example" },
+      page_url: "https://clinic.example/book",
+    },
   },
 };
 

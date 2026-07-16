@@ -20,6 +20,11 @@ export {
 
 export { getAnthropic } from "./anthropic";
 
+// Phase 8 (P8-HEALTH) — additive re-export of the existing Phase-3 WhatsApp
+// sender so apps/web's Health escalation reuses the one delivery layer instead
+// of reimplementing the Twilio POST (graceful no-key degradation lives there).
+export { sendWhatsApp, type SendWhatsAppInput } from "./delivery/index";
+
 export {
   PROMPT_VERSION,
   TONE_RULES,
@@ -189,6 +194,27 @@ export {
   type RunIndustryLearningResult,
   type RunIndustryLearningForOrgResult,
 } from "./agents/learn";
+
+// Phase 9 (P9-KB) — the KB-gap miner: content gaps → drafted KB articles +
+// bot-improvement briefs written as automation_opportunity insights that flow
+// into the Growth pipeline. jobs/ + CLI callers import these from the package
+// root. Additive: no existing export is touched.
+export {
+  runKbGapMiner,
+  runKbGapMinerForOrg,
+  runKbGapMinerForOrgDefault,
+  buildKbGapPack,
+  kbGapFingerprint,
+  normalizeGapSlug,
+  kbGapOutputSchema,
+  type KbGapOutput,
+  type KbGapDraft,
+  type KbGapPack,
+  type KbGap,
+  type RunKbGapMinerOptions,
+  type RunKbGapMinerResult,
+  type RunKbGapMinerForOrgResult,
+} from "./agents/kb-gaps";
 
 export {
   embedTexts,

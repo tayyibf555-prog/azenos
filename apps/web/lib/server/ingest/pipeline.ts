@@ -33,11 +33,14 @@ export interface IngestContext {
   projectId: string;
   clientId: string;
   projectName: string;
-  source: "sdk" | "ghl";
+  source: "sdk";
 }
 
-export function sourceForAuthMode(authMode: "hmac" | "token"): "sdk" | "ghl" {
-  return authMode === "hmac" ? "sdk" : "ghl";
+// Every ingest event is sourced as "sdk" regardless of auth mode: HMAC callers
+// sign, token-mode no-code callers send a header, but both land on the same
+// project webhook and share the one ingest source bucket.
+export function sourceForAuthMode(_authMode: "hmac" | "token"): "sdk" {
+  return "sdk";
 }
 
 interface RejectedEvent {
@@ -68,6 +71,13 @@ export async function handleIngestRequest(
   const key = await lookupKey(publicKey);
   if (!key) {
     console.error(`[ingest] unknown or revoked public key ${publicKey}`);
+    return jsonError(401, "unauthorized");
+  }
+  // Phase 7 §B least privilege: feedback keys are browser-embeddable and may
+  // ONLY create feedback.submitted via /api/feedback/[publicKey]. Reject them
+  // here with the same generic 401 as an unknown key (never reveal the reason).
+  if (key.kind !== "ingest") {
+    console.error(`[ingest] ${publicKey}: rejected non-ingest key kind=${key.kind}`);
     return jsonError(401, "unauthorized");
   }
   const ctx: IngestContext = {

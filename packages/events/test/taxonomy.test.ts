@@ -9,8 +9,8 @@ import {
 } from "../src/index.js";
 
 describe("taxonomy coverage (spec §7)", () => {
-  it("implements all 41 known event types (6 leads + 5 bookings + 9 money + 6 agents + 1 llm + 6 comms + 5 ops + 3 system)", () => {
-    expect(EVENT_TYPES.length).toBe(41);
+  it("implements all 42 known event types (6 leads + 5 bookings + 9 money + 6 agents + 1 llm + 6 comms + 5 ops + 3 system + 1 feedback)", () => {
+    expect(EVENT_TYPES.length).toBe(42);
   });
 
   it("has a validating fixture for every known type", () => {
@@ -133,6 +133,72 @@ describe("per-type data rules", () => {
       },
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("feedback.submitted (Phase 7 §B — public webhook)", () => {
+  it("round-trips a valid feedback event through parseEvent", () => {
+    const result = parseEvent(exampleEvents["feedback.submitted"]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.event.type).toBe("feedback.submitted");
+      expect(result.event.data.kind).toBe("bug");
+      expect(result.event.data.severity).toBe(2);
+      expect((result.event.data.submitter as { email: string }).email).toBe(
+        "front-desk@clinic.example",
+      );
+    }
+  });
+
+  it("rejects a message longer than 2000 chars", () => {
+    const result = parseEvent({
+      ...exampleEvents["feedback.submitted"],
+      data: { kind: "bug", message: "x".repeat(2001) },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a message of exactly 2000 chars", () => {
+    const result = parseEvent({
+      ...exampleEvents["feedback.submitted"],
+      data: { kind: "feature", message: "y".repeat(2000) },
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects an empty message", () => {
+    const result = parseEvent({
+      ...exampleEvents["feedback.submitted"],
+      data: { kind: "bug", message: "" },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects an unknown kind", () => {
+    const result = parseEvent({
+      ...exampleEvents["feedback.submitted"],
+      data: { kind: "complaint", message: "not one of the five kinds" },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects a severity outside 1..3", () => {
+    const result = parseEvent({
+      ...exampleEvents["feedback.submitted"],
+      data: { kind: "bug", message: "blocking", severity: 4 },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("strips unknown keys like the honeypot from the payload", () => {
+    const result = parseEvent({
+      ...exampleEvents["feedback.submitted"],
+      data: { kind: "praise", message: "great!", website: "spam.example" },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect("website" in result.event.data).toBe(false);
+    }
   });
 });
 

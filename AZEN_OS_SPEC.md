@@ -16,8 +16,8 @@ UK/Europe-London timezone) that:
    payments (Stripe + bank transfer), retainers/MRR, project pipeline, and
    profitability.
 2. **Tracks every client project in production** — each project the agency
-   builds for a client (custom Next.js/Node/Python systems, GHL/no-code
-   setups, AI agents) gets a **generated webhook** that streams extensive
+   builds for a client (custom Next.js/Node/Python systems, no-code
+   workflow-tool setups, AI agents) gets a **generated webhook** that streams extensive
    real-world event data back into the OS: every agent run, every
    conversation, every booking made, every payment captured, every error,
    every human-hours-saved signal.
@@ -49,7 +49,7 @@ later without a rewrite.
 | Payments | **Stripe** (webhooks) + **manual bank-transfer logging** (UI + CSV import) |
 | Current tracking | Nothing consistent — the OS replaces scattered notes/sheets. Import friction must be near-zero. |
 | Brief delivery | **Email (primary, rich)** + **WhatsApp (short, punchy)** via Twilio WhatsApp API (SMS fallback comes free with the same integration) |
-| Client systems | Custom code (Next.js/Node/Python) **and** GHL/no-code SaaS → webhook layer needs both a tiny SDK and plain HTTPS/native-webhook mapping |
+| Client systems | Custom code (Next.js/Node/Python) **and** no-code workflow-tool SaaS → webhook layer needs both a tiny SDK and plain HTTPS/native-webhook mapping |
 | Revenue model | Build fee + monthly retainer → OS must model one-off revenue AND MRR per client |
 | Scale target | Design multi-tenant from day 1; 15–50 projects within 6 months is the sizing assumption |
 | Client access | Internal-only v1; portal/shareable reports are Phase 7+ |
@@ -96,7 +96,7 @@ Vercel gives zero-ops deploys. Supporting services:
 │  /api/ingest/[projectKey]  ←── signed webhooks from every client system               │
 │  /api/hooks/calendly       ←── Calendly                                               │
 │  /api/hooks/stripe         ←── Stripe                                                 │
-│  /api/hooks/ghl            ←── GoHighLevel native webhooks (mapped)                   │
+│  /api/hooks/workflow       ←── no-code workflow-tool native webhooks (mapped)         │
 │                                                                                        │
 │  Ingestion pipeline: verify → dedup → normalize → store raw → derive metrics → alert  │
 │                                                                                        │
@@ -148,14 +148,14 @@ contacts        id, client_id, name, role, email, phone     — people at the cl
 ```
 projects        id, org_id, client_id, name, slug, description,
                 type (ai_agent|automation|website|chatbot|voice_agent|crm_setup|custom),
-                stack ('custom_code'|'ghl'|'n8n'|'mixed'),
+                stack ('custom_code'|'n8n'|'mixed'),
                 status (scoping|building|testing|live|paused|completed|cancelled),
                 build_fee_pence, retainer_pence_monthly, retainer_active bool,
                 start_date, live_date, health (green|amber|red, agent-set),
                 goals jsonb  — e.g. [{metric:'bookings_created', target:50, period:'month'}]
 project_keys    id, project_id, public_key ('azn_pk_...'), secret ('azn_sk_...', hashed),
                 label, created_at, revoked_at   — powers webhook auth; rotatable
-project_integrations  id, project_id, provider (stripe|calendly|ghl|custom|twilio|...),
+project_integrations  id, project_id, provider (stripe|calendly|twilio|custom|...),
                 external_id, config jsonb       — maps native webhooks → project
 ```
 
@@ -164,7 +164,7 @@ project_integrations  id, project_id, provider (stripe|calendly|ghl|custom|twili
 ```
 events          id (uuid), org_id, project_id null (org-level events, e.g. agency Calendly, have no project), 
                 type (see taxonomy §7), 
-                source ('sdk'|'ghl'|'stripe'|'calendly'|'manual'|'import'),
+                source ('sdk'|'stripe'|'calendly'|'manual'|'import'|'feedback'),
                 idempotency_key (unique per project — dedup),
                 occurred_at (client-reported), received_at,
                 actor jsonb    — {kind:'ai_agent'|'human'|'system', id, name}
@@ -392,8 +392,8 @@ key pair and shows a setup screen:
 - Copy-paste blocks, generated per stack:
   - **Node/Next.js:** `npm i @azen/os-sdk` + 5-line snippet
   - **Python:** `pip install azen-os` + 5-line snippet
-  - **GHL / no-code:** the raw URL + header instructions for GHL's native
-    webhook actions, plus a field-mapping preset
+  - **No-code workflow tool:** the raw URL + header instructions for the
+    tool's native webhook actions, plus a field-mapping preset
   - **Plain curl** for anything else
 - A **"Send test event"** button and a live "waiting for first event…"
   listener (Realtime) that flips green when the first event lands.
@@ -426,7 +426,7 @@ The SDK signs each request: `X-Azen-Signature: t=<ts>,v1=HMAC-SHA256(secret, ts 
 Pipeline, in order — each step small and testable:
 
 1. **Verify** — HMAC signature, timestamp within ±5 min (replay protection).
-   GHL/no-code callers that can't sign use a per-project secret header
+   No-code workflow-tool callers that can't sign use a per-project secret header
    (`X-Azen-Token`) as the fallback auth mode, flagged on the key record.
 2. **Rate limit** — Upstash, per key (default 100 req/10s, config per project).
 3. **Dedup** — `idempotency_key` unique check (Redis fast-path + DB
@@ -459,9 +459,10 @@ through steps 4–6 from the Setup tab (dead-letter recovery).
 - **Calendly** → org-level: `booking.created/cancelled` for agency calls.
 - **Stripe** → `payment.captured/failed/refunded`, `subscription.*` — routed
   to client/project via `project_integrations` mapping or metadata.
-- **GHL** → per-project: map GHL workflow webhooks (contact created,
-  appointment booked, pipeline stage changed, form submitted) into taxonomy
-  events via a per-project mapping config (`project_integrations.config`).
+- **No-code workflow tool** → per-project: map the tool's native workflow
+  webhooks (contact created, appointment booked, pipeline stage changed, form
+  submitted) into taxonomy events via a per-project mapping config
+  (`project_integrations.config`).
 
 ---
 
@@ -491,7 +492,7 @@ topics[], sentiment, transcript_ref (optional; see §16 privacy)
 **comms:** `message.sent`, `message.received`, `email.sent`, `email.opened`,
 `call.completed` (duration, outcome), `review.received` (rating, text)
 **operations:** `task.completed` (what, by human|ai, minutes_spent),
-`workflow.run` (n8n/GHL automation fired: name, success, actions_count),
+`workflow.run` (n8n / no-code automation fired: name, success, actions_count),
 `document.generated`, `order.created`, `order.fulfilled`
 **system health:** `system.error` (severity, component), `system.warning`,
 `integration.disconnected`
@@ -742,7 +743,7 @@ azen-os/
 │   ├── app/(dashboard)/         # command-center, clients, projects, money,
 │   │                            # bookings, briefs, growth, learn, ask
 │   ├── app/api/ingest/[key]/route.ts
-│   ├── app/api/hooks/{stripe,calendly,ghl}/route.ts
+│   ├── app/api/hooks/{stripe,calendly,workflow}/route.ts
 │   └── components/              # charts, event-stream, metric-board, brief-card
 ├── packages/db/                 # Drizzle schema, migrations, seed, query helpers
 ├── packages/events/             # Event taxonomy: Zod schemas + TS types (single
@@ -852,8 +853,8 @@ are correct and whose narrative references real week-over-week trends.
 **Phase 6 — Opportunity Scout + Upsell Engine + Learn.** Scout job +
 Insights tab + Growth pipeline screen, Upsell Engine + proposal documents,
 Industry Learning agent + Learn screen + pgvector retrieval (this also swaps
-Ask Azen's `search_knowledge` stub for real retrieval), GHL webhook
-mapping preset, Python SDK.
+Ask Azen's `search_knowledge` stub for real retrieval), no-code workflow-tool
+webhook mapping preset, Python SDK.
 *Done when:* the seeded dental project yields ≥3 sensible, evidence-linked
 opportunities and one client-ready upsell proposal document.
 

@@ -1,13 +1,23 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { COLORS, tint } from "../../components/ui";
-import { formatPence, formatLondonDate, formatLondonTime } from "../../lib/format";
+import {
+  formatPence,
+  formatLondonDate,
+  formatLondonTime,
+  relativeTime,
+} from "../../lib/format";
 import {
   PROPOSAL_STATUSES,
   type ProposalItem,
   type ProposalStatus,
 } from "../../components/growth-types";
+import {
+  buildWizardPrefillPayload,
+  WIZARD_PREFILL_STORAGE_KEY,
+} from "../../lib/growth/proposalPrefill";
 
 const STATUS_COLOR: Record<string, string> = {
   draft: COLORS.grey,
@@ -33,21 +43,58 @@ function nextStatus(status: string): ProposalStatus | null {
   return order[idx + 1]!;
 }
 
+/** "Viewed 3x · last seen 2h ago" — or "Not viewed yet" once sent. */
+function ViewedChip({ viewCount, lastViewedAt }: { viewCount: number; lastViewedAt: string | null }) {
+  return (
+    <span className="faint tnum" style={{ fontSize: 11 }}>
+      {viewCount > 0
+        ? `Viewed ${viewCount}× · last seen ${relativeTime(lastViewedAt!)}`
+        : "Not viewed yet"}
+    </span>
+  );
+}
+
 /**
  * The proposals board (right): every upsell proposal as a kanban of the lifecycle
  * columns (draft → ready → sent → won → lost). Clicking a card opens the full,
  * client-ready proposal document (problem in the client's data, proposed build,
- * expected ROI, price) with the status controls and the cited evidence.
+ * expected ROI, price) with the status controls and the cited evidence. "Send"
+ * on a ready proposal mints a share link (P8-GROWTH2) and shows "viewed Nx ·
+ * last seen"; "Create project" on a won proposal hands off to the onboarding
+ * wizard prefilled from the proposal.
  */
 export function ProposalsBoard({
   items,
   busy,
   onMove,
+  onSend,
+  onResend,
+  sentLinks = {},
 }: {
   items: ProposalItem[];
   busy: Record<string, boolean>;
   onMove: (id: string, status: ProposalStatus) => void;
+  /** Send a 'ready' proposal (docs/phase8 §P8-GROWTH2): mints a share link, flips status → sent. */
+  onSend: (id: string) => void;
+  /** Re-display the link for an already-'sent' proposal whose one-time token was lost before copying (decrypts server-side; same token). */
+  onResend: (id: string) => void;
+  /** proposalId → full share URL, populated right after a successful send (this session only). */
+  sentLinks?: Record<string, string>;
 }) {
+  const router = useRouter();
+
+  function createProjectFromProposal(p: ProposalItem): void {
+    try {
+      window.sessionStorage.setItem(
+        WIZARD_PREFILL_STORAGE_KEY,
+        JSON.stringify(buildWizardPrefillPayload(p)),
+      );
+    } catch {
+      /* sessionStorage unavailable (private mode) — wizard just starts blank */
+    }
+    router.push("/projects/new?fromProposal=1");
+  }
+
   const [openId, setOpenId] = useState<string | null>(null);
   const open = items.find((p) => p.id === openId) ?? null;
 
@@ -56,9 +103,9 @@ export function ProposalsBoard({
       <div
         style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}
       >
-        <h3 style={{ fontSize: 14 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 620 }}>
           Proposals{" "}
-          <span className="faint" style={{ fontWeight: 400 }}>
+          <span className="faint tnum" style={{ fontWeight: 400 }}>
             · {items.length}
           </span>
         </h3>
@@ -129,11 +176,14 @@ export function ProposalsBoard({
                     </span>
                     {p.suggestedPricePence !== null && (
                       <span
-                        className="mono"
+                        className="mono tnum"
                         style={{ fontSize: 11.5, color: COLORS.green }}
                       >
                         {formatPence(p.suggestedPricePence)}
                       </span>
+                    )}
+                    {p.status !== "draft" && p.status !== "ready" && (
+                      <ViewedChip viewCount={p.viewCount} lastViewedAt={p.lastViewedAt} />
                     )}
                   </button>
                 ))}
@@ -148,6 +198,10 @@ export function ProposalsBoard({
           proposal={open}
           busy={Boolean(busy[open.id])}
           onMove={onMove}
+          onSend={onSend}
+          onResend={onResend}
+          sentLink={sentLinks[open.id]}
+          onCreateProject={() => createProjectFromProposal(open)}
           onClose={() => setOpenId(null)}
         />
       )}
@@ -159,15 +213,44 @@ function ProposalModal({
   proposal: p,
   busy,
   onMove,
+  onSend,
+  onResend,
+  sentLink,
+  onCreateProject,
   onClose,
 }: {
   proposal: ProposalItem;
   busy: boolean;
   onMove: (id: string, status: ProposalStatus) => void;
+  onSend: (id: string) => void;
+  onResend: (id: string) => void;
+  sentLink?: string;
+  onCreateProject: () => void;
   onClose: () => void;
 }) {
   const tone = STATUS_COLOR[p.status]!;
   const advance = nextStatus(p.status);
+  // 'ready' → 'sent' isn't a plain status flip: it must mint the share link
+  // first (P8-GROWTH2), so that one transition gets its own "Send" action.
+  const advanceIsSend = advance === "sent";
+  // The raw token isn't shown by any read, so a sent proposal may have a link
+  // the owner lost before copying. Re-display it by decrypting the stored
+  // ciphertext server-side (same token, view history intact) — offered whenever
+  // there's a sent token and no link already in hand this session.
+  const canRecoverLink =
+    p.status === "sent" && !sentLink && p.shareTokenId !== null;
+  const [copied, setCopied] = useState(false);
+
+  async function copyLink(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — the link is still visible to select manually */
+    }
+  }
+
   return (
     <div
       role="dialog"
@@ -185,7 +268,7 @@ function ProposalModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="card"
+        className="glass-strong"
         style={{
           width: "min(720px, 100%)",
           maxHeight: "86vh",
@@ -240,12 +323,51 @@ function ProposalModal({
                 gap: 8,
               }}
             >
-              <span style={{ fontSize: 24, fontWeight: 680, color: COLORS.green }}>
+              <span className="tnum" style={{ fontSize: 24, fontWeight: 680, color: COLORS.green }}>
                 {formatPence(p.suggestedPricePence)}
               </span>
               <span className="faint" style={{ fontSize: 12 }}>
                 suggested price
               </span>
+            </div>
+          )}
+
+          {p.status !== "draft" && p.status !== "ready" && (
+            <ViewedChip viewCount={p.viewCount} lastViewedAt={p.lastViewedAt} />
+          )}
+
+          {sentLink && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 12px",
+                borderRadius: "var(--radius-sm)",
+                background: tint(COLORS.violet, 0.08),
+                border: `1px solid ${tint(COLORS.violet, 0.24)}`,
+              }}
+            >
+              <span
+                className="mono"
+                style={{
+                  fontSize: 11.5,
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {sentLink}
+              </span>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => copyLink(sentLink)}
+              >
+                {copied ? "Copied ✓" : "Copy link"}
+              </button>
             </div>
           )}
 
@@ -256,7 +378,7 @@ function ProposalModal({
             <div
               style={{
                 padding: "12px 14px",
-                borderRadius: 10,
+                borderRadius: "var(--radius-sm)",
                 background: tint(COLORS.green, 0.08),
                 border: `1px solid ${tint(COLORS.green, 0.24)}`,
                 fontSize: 13,
@@ -327,19 +449,59 @@ function ProposalModal({
             background: "var(--panel)",
           }}
         >
-          {advance && (
+          {advance && advanceIsSend && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              disabled={busy}
+              onClick={() => onSend(p.id)}
+              style={{
+                color: "var(--bg)",
+                background: STATUS_COLOR.sent,
+                borderColor: STATUS_COLOR.sent,
+              }}
+            >
+              Send to client
+            </button>
+          )}
+          {advance && !advanceIsSend && (
             <button
               type="button"
               className="btn btn-sm"
               disabled={busy}
               onClick={() => onMove(p.id, advance)}
               style={{
-                color: "#0b0e14",
+                color: "var(--bg)",
                 background: STATUS_COLOR[advance],
                 borderColor: STATUS_COLOR[advance],
               }}
             >
               Move to {STATUS_LABEL[advance]}
+            </button>
+          )}
+          {canRecoverLink && (
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              disabled={busy}
+              onClick={() => onResend(p.id)}
+              title="Show the client link again — the raw link isn't kept after sending"
+            >
+              Show link
+            </button>
+          )}
+          {p.status === "won" && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={onCreateProject}
+              style={{
+                color: "var(--bg)",
+                background: COLORS.blue,
+                borderColor: COLORS.blue,
+              }}
+            >
+              Create project →
             </button>
           )}
           {p.status !== "won" && (

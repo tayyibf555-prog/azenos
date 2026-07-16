@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useDictation } from "../../lib/useDictation";
+import { ActivationBanner } from "../ActivationBanner";
+import { COLORS, tint } from "../ui";
 import { deriveAskContext } from "./context";
+import { DictationMic } from "./DictationMic";
 import { MessageList } from "./MessageList";
 import type { SessionSummary } from "./types";
 import { useAskChat } from "./useAskChat";
@@ -47,7 +51,7 @@ function parseSessions(json: unknown): SessionSummary[] {
   return out;
 }
 
-export function AskScreen() {
+export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolean }) {
   const chat = useAskChat();
   const pathname = usePathname();
   const router = useRouter();
@@ -56,6 +60,13 @@ export function AskScreen() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const dictation = useDictation({
+    getValue: useCallback(() => draftRef.current, []),
+    setValue: setDraft,
+  });
 
   const querySession = search.get("session");
 
@@ -115,9 +126,11 @@ export function AskScreen() {
   const hasMessages = chat.messages.length > 0;
 
   return (
-    <div style={{ display: "flex", gap: 20, height: "calc(100dvh - 116px)", minHeight: 440 }}>
-      {/* History sidebar */}
-      <aside
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 116px)", minHeight: 440 }}>
+      <ActivationBanner missing={hasAnthropicKey ? [] : ["ANTHROPIC_API_KEY"]} />
+      <div style={{ display: "flex", gap: 20, flex: 1, minHeight: 0 }}>
+        {/* History sidebar */}
+        <aside
         style={{
           width: 244,
           flex: "none",
@@ -137,15 +150,28 @@ export function AskScreen() {
         </button>
         <div
           style={{
-            fontSize: 10,
-            fontWeight: 650,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "var(--text-3)",
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
             padding: "0 4px 8px",
           }}
         >
-          History
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 650,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "var(--text-3)",
+            }}
+          >
+            History
+          </span>
+          {sessions.length > 0 && (
+            <span className="accent-num tnum" style={{ fontSize: 13, fontWeight: 680 }}>
+              {sessions.length}
+            </span>
+          )}
         </div>
         <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
           {sessions.length === 0 && (
@@ -192,10 +218,10 @@ export function AskScreen() {
                   height: 40,
                   borderRadius: 11,
                   margin: "0 auto 16px",
-                  background: "linear-gradient(135deg, #7aa2f7, #bb9af7)",
+                  background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
                   display: "grid",
                   placeItems: "center",
-                  color: "#0b0e14",
+                  color: "var(--bg)",
                   fontWeight: 800,
                   fontSize: 18,
                 }}
@@ -246,8 +272,8 @@ export function AskScreen() {
               width: "100%",
               fontSize: 12.5,
               color: "var(--amber)",
-              background: "rgba(217, 164, 65, 0.08)",
-              border: "1px solid rgba(217, 164, 65, 0.22)",
+              background: tint(COLORS.amber, 0.08),
+              border: `1px solid ${tint(COLORS.amber, 0.22)}`,
               borderRadius: "var(--radius-sm)",
               padding: "9px 12px",
             }}
@@ -296,6 +322,7 @@ export function AskScreen() {
                 outline: "none",
               }}
             />
+            <DictationMic controller={dictation} />
             <button
               type="button"
               className="btn btn-primary btn-sm"
@@ -305,12 +332,18 @@ export function AskScreen() {
               {chat.busy ? "…" : "Send"}
             </button>
           </div>
+          {dictation.error && (
+            <p className="faint" style={{ fontSize: 11.5, marginTop: 6, textAlign: "center" }}>
+              {dictation.error}
+            </p>
+          )}
           <p className="faint" style={{ fontSize: 11, marginTop: 6, textAlign: "center" }}>
             <span className="kbd">Enter</span> to send · <span className="kbd">Shift</span>+
             <span className="kbd">Enter</span> for a new line
           </p>
         </div>
       </section>
+      </div>
     </div>
   );
 }

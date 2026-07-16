@@ -12,7 +12,7 @@
 
 import { withSharedTone } from "./shared";
 
-export const DAILY_BRIEF_PROMPT_VERSION = "daily-brief-2026-07-13";
+export const DAILY_BRIEF_PROMPT_VERSION = "daily-brief-2026-07-16";
 
 const ROLE = [
   "# Role",
@@ -32,7 +32,10 @@ const INPUT = [
   "- projects[]: id, name, clientName, health; kpis[] each with value, avg7, avg28,",
   "  deltaPct (value vs the 7-day mean) and goodDirection ('up' means higher is",
   "  better); revenueYesterdayPence, minutesSavedYesterday; lastEventAt +",
-  "  hoursSinceLastEvent (the silence flag); openAnomalies[]; errorCountYesterday.",
+  "  hoursSinceLastEvent (the silence flag); openAnomalies[]; errorCountYesterday;",
+  "  feedback: { yesterday: {bug,feature,question,praise,other} counts, notable[]",
+  "  (up to 3, severity-desc-then-latest) each {kind, message, severity} } — client",
+  "  staff feedback submitted via the project's feedback widget.",
   "- openInsights[]: projectName, kind, title, confidence — items awaiting review.",
   "- yesterdayVsBaseline.note: a precomputed, factual headline delta you may lead with.",
   "All money values are integer PENCE. Never invent, rescale, or extrapolate a number",
@@ -69,6 +72,11 @@ const RULES = [
   "- Judge a KPI move by goodDirection: a rise where goodDirection is 'down' is bad.",
   "- Treat hoursSinceLastEvent > 24 as silence worth flagging; errorCountYesterday > 0",
   "  as a reliability concern. Put open anomalies before soft observations.",
+  "- When a project's feedback.notable[] is non-empty, mention it in that project's",
+  "  paragraph_md — bugs first, then other kinds in the order given — and suggest a",
+  "  concrete action (e.g. triage the bug, reply to the question). A notable bug or",
+  "  any severity-3 item belongs in needs_attention. Skip feedback entirely when",
+  "  notable[] is empty, even if yesterday's counts are non-zero.",
   "- Money is £ sterling from integer pence (150000 → £1,500.00). Dates are the",
   "  pack's London day. en-GB spelling.",
   "- Answer ONLY from the pack. If a KPI's value or deltaPct is null, say the data is",

@@ -3,7 +3,12 @@ import { db } from "@azen/db";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { WeeklyPack } from "../src/datapack/agency-weekly";
 import type { WeeklyOutput } from "../src/agents/weekly";
-import { type AgentsHarness, cleanupHarness, createHarness } from "./helpers";
+import {
+  type AgentsHarness,
+  cleanupHarness,
+  createHarness,
+  insertFeedbackItem,
+} from "./helpers";
 
 /**
  * runWeeklySynth tests (docs/phase5/CONTRACTS.md §P5-WEEKLY). getAnthropic is
@@ -268,6 +273,33 @@ beforeAll(async () => {
   // Prior weekly edition (starts the week before target) — the memory anchor.
   await insertWeeklyBrief(harness.orgId, days.priorMon, "Prior week: MRR flat");
 
+  // Feedback (Phase 7 §B3): THIS week 2 bug + 1 feature; LAST week 1 bug —
+  // both counts trend "up" (this/last ratio > 1.05).
+  await insertFeedbackItem(harness.orgId, harness.projectId, {
+    kind: "bug",
+    message: "Crashes on save",
+    severity: 3,
+    createdAt: noonUtc(days.targetMon),
+  });
+  await insertFeedbackItem(harness.orgId, harness.projectId, {
+    kind: "bug",
+    message: "Slow to load",
+    severity: 1,
+    createdAt: noonUtc(days.targetWed),
+  });
+  await insertFeedbackItem(harness.orgId, harness.projectId, {
+    kind: "feature",
+    message: "Add CSV export",
+    severity: null,
+    createdAt: noonUtc(days.targetWed),
+  });
+  await insertFeedbackItem(harness.orgId, harness.projectId, {
+    kind: "bug",
+    message: "Old bug from last week",
+    severity: 2,
+    createdAt: noonUtc(days.lastWed),
+  });
+
   // Money: MRR + a payment collected this week and one last week.
   await insertActiveSub(harness.orgId, harness.clientId, 50000, days.priorMon);
   await insertPayment(harness.orgId, harness.clientId, 50000, days.targetWed);
@@ -319,6 +351,31 @@ describe("buildAgencyWeeklyPack — deterministic numbers vs SQL", () => {
     expect(pack.money.collectedThisWeekPence).toBe(50000);
     expect(pack.money.collectedLastWeekPence).toBe(40000);
     expect(pack.money.currentMrrPence).toBe(50000);
+
+    // Feedback: this week 2 bug + 1 feature vs last week 1 bug — both up.
+    const bugRow = pack.feedback.byKind.find((k) => k.kind === "bug")!;
+    expect(bugRow.thisWeek).toBe(2);
+    expect(bugRow.lastWeek).toBe(1);
+    expect(bugRow.trend).toBe("up");
+    const featureRow = pack.feedback.byKind.find((k) => k.kind === "feature")!;
+    expect(featureRow.thisWeek).toBe(1);
+    expect(featureRow.lastWeek).toBe(0);
+    expect(featureRow.trend).toBe("up");
+    // Kinds with no activity either week still appear, zeroed, in canonical order.
+    expect(pack.feedback.byKind.map((k) => k.kind)).toEqual([
+      "bug",
+      "feature",
+      "question",
+      "praise",
+      "other",
+    ]);
+    const questionRow = pack.feedback.byKind.find((k) => k.kind === "question")!;
+    expect(questionRow.thisWeek).toBe(0);
+    expect(questionRow.lastWeek).toBe(0);
+    expect(questionRow.trend).toBe("flat");
+    expect(pack.feedback.totalThisWeek).toBe(3);
+    expect(pack.feedback.totalLastWeek).toBe(1);
+    expect(pack.feedback.trend).toBe("up");
 
     // Prior weekly edition folded in.
     expect(pack.priorEdition).not.toBeNull();

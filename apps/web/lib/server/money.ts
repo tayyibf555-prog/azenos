@@ -924,18 +924,52 @@ export async function getOsRoi(orgId: string, month?: string): Promise<OsRoi> {
 export interface CostStatementProject {
   projectId: string;
   name: string;
+  /** Billed base for the project = OS cost + (billed client-system AI). */
   costPence: number;
   billablePence: number;
+  /** OS agent-run cost on this project. */
+  osCostPence: number;
+  /** client-system AI (tokens_cost_pence rollup) on this project — billed by
+   *  default; display-only when include_client_emitted=false. */
+  clientSystemAiPence: number;
+  /** per-provider client-emitted spend (event spine) on this project — detail. */
+  clientEmittedPence: number;
+}
+
+/** Per-provider line of a client's own (client-emitted) key spend. */
+export interface CostStatementProviderLine {
+  provider: string;
+  label: string;
+  pence: number;
 }
 
 export interface CostStatementClient {
   clientId: string;
   clientName: string;
   markupPct: number;
+  /** Billed base = OS cost + (billed client-system AI). Marked up to billable. */
   costPence: number;
   markupPence: number;
   billablePence: number;
   projects: CostStatementProject[];
+  // ── Billing v2 additive fields ────────────────────────────────────────────
+  /** OS agent-run cost — one of the two billed streams. */
+  osCostPence: number;
+  /** OS stream billable (marked up); reconciles with clientSystemAiBillablePence
+   *  to billablePence. */
+  osBillablePence: number;
+  /** client-system AI spend (tokens_cost_pence rollup) — the SECOND billed
+   *  stream by default (LEAD RULING 2026-07-16); display-only when
+   *  include_client_emitted=false (clients who bring their own keys). */
+  clientSystemAiPence: number;
+  /** client-system AI billable (marked up when billed; 0 when excluded). */
+  clientSystemAiBillablePence: number;
+  /** per-provider client-emitted spend (event spine) — provider detail lines. */
+  clientEmittedPence: number;
+  /** clientEmitted broken down by provider (anthropic/openai/twilio/…). */
+  providers: CostStatementProviderLine[];
+  /** true when the client-system AI stream is folded into billablePence. */
+  clientEmittedBilled: boolean;
 }
 
 export interface CostStatements {
@@ -943,6 +977,24 @@ export interface CostStatements {
   defaultMarkupPct: number;
   clients: CostStatementClient[];
   totals: { costPence: number; markupPence: number; billablePence: number };
+  // ── Billing v2 additive fields ──────────────────────────────────────────────
+  /** whether client-emitted spend was folded into billable (query param). */
+  includeClientEmitted: boolean;
+  /** Σ client-emitted spend across all clients (display-only by default). */
+  totalClientEmittedPence: number;
+  /** org-wide client-emitted spend by provider. */
+  providerTotals: CostStatementProviderLine[];
+}
+
+const PROVIDER_STATEMENT_LABELS: Record<string, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  twilio: "Twilio",
+  higgsfield: "Higgsfield",
+  other: "Other",
+};
+function statementProviderLabel(p: string): string {
+  return PROVIDER_STATEMENT_LABELS[p] ?? p.charAt(0).toUpperCase() + p.slice(1);
 }
 
 /** billable = round(cost × (1 + pct/100)); pct 0 ⇒ billable == cost, exactly. */
@@ -976,11 +1028,40 @@ function allocateBillable(costsPence: number[], pct: number, clientBillablePence
   return out;
 }
 
+interface EmittedProviderRow {
+  client_id: string;
+  project_id: string | null;
+  provider: string;
+  pence: number | string;
+}
+
+/**
+ * Client cost statement (billing v2, docs/phase9/CONTRACTS.md — P9-COST).
+ *
+ * TWO cost streams, kept as SEPARATE labelled line items:
+ *  - OS cost (agent_runs) → "OS agents".
+ *  - client-system AI (tokens_cost_pence rollup) → "client-system AI".
+ *
+ * LEAD RULING 2026-07-16 (P9-COST A): both streams are billed WITH the client
+ * markup by DEFAULT (includeClientEmitted defaults to TRUE), so the v2 default
+ * reproduces the v1 statement total exactly (v1 marked up os+client-system AI
+ * combined; there is no retroactive restatement). `costPence` is the combined
+ * billed base and `billablePence` its markup; the streams reconcile to it via
+ * `osBillablePence` + `clientSystemAiBillablePence`. `includeClientEmitted=false`
+ * EXCLUDES the client-system AI stream from billing (display-only) for clients
+ * who bring their own keys. The event-spine per-provider lines (`providers`,
+ * `clientEmittedPence`) remain provider detail on that stream.
+ *
+ * Additive only — every v1 field keeps its shape and meaning.
+ */
 export async function getCostStatements(
   orgId: string,
   month?: string,
+  opts?: { includeClientEmitted?: boolean },
 ): Promise<CostStatements> {
+  const includeClientEmitted = opts?.includeClientEmitted !== false;
   const costs = await getCostsByClient(orgId, month);
+  const { start, end } = londonMonthBounds(costs.month);
 
   const markupRows = await db
     .select({ id: clients.id, markup: clients.costMarkupPct })
@@ -988,23 +1069,97 @@ export async function getCostStatements(
     .where(eq(clients.orgId, orgId));
   const markupById = new Map(markupRows.map((r) => [r.id, r.markup] as const));
 
+  // Client-emitted spend from the event spine, grouped by (client, project,
+  // provider) — the authoritative source for the display-only block, so its
+  // totals reconcile to SQL exactly. Missing/blank provider → 'other'.
+  const emittedRows = (await db.execute(sql`
+    select
+      p.client_id as client_id,
+      e.project_id as project_id,
+      coalesce(nullif(lower(e.data->>'provider'), ''), 'other') as provider,
+      coalesce(sum((e.data->>'cost_pence')::numeric), 0)::bigint as pence
+    from events e
+    join projects p on p.id = e.project_id and p.org_id = ${orgId}::uuid
+    where e.org_id = ${orgId}::uuid
+      and e.type = 'agent.run.completed'
+      and (e.data ? 'cost_pence')
+      and e.occurred_at >= ${start} and e.occurred_at < ${end}
+    group by p.client_id, e.project_id, provider
+  `)) as unknown as EmittedProviderRow[];
+
+  const emittedByClientProvider = new Map<string, Map<string, number>>();
+  const emittedByProject = new Map<string, number>();
+  const providerTotalsMap = new Map<string, number>();
+  for (const row of emittedRows) {
+    const pence = Math.round(Number(row.pence)) || 0;
+    if (pence === 0) continue;
+    let cp = emittedByClientProvider.get(row.client_id);
+    if (!cp) {
+      cp = new Map();
+      emittedByClientProvider.set(row.client_id, cp);
+    }
+    cp.set(row.provider, (cp.get(row.provider) ?? 0) + pence);
+    if (row.project_id) {
+      emittedByProject.set(
+        row.project_id,
+        (emittedByProject.get(row.project_id) ?? 0) + pence,
+      );
+    }
+    providerTotalsMap.set(
+      row.provider,
+      (providerTotalsMap.get(row.provider) ?? 0) + pence,
+    );
+  }
+
   const outClients: CostStatementClient[] = costs.clients.map((c) => {
     const pct = markupById.get(c.clientId) ?? DEFAULT_COST_MARKUP_PCT;
-    const costPence = c.totals.totalPence;
+    // Two billed streams: OS (agent_runs) + client-system AI (tokens_cost_pence
+    // rollup). Both marked up by default (LEAD RULING 2026-07-16); the latter is
+    // excluded from billing — display-only — when includeClientEmitted=false.
+    const osCostPence = c.totals.osAgentPence;
+    const clientSystemAiPence = c.totals.clientSystemAiPence;
+    const billedCsai = includeClientEmitted ? clientSystemAiPence : 0;
+
+    // v1-identical: mark up the COMBINED billed base so v2 default reproduces
+    // the v1 statement total exactly, then split the two labelled line items so
+    // they reconcile (largest-remainder).
+    const costPence = osCostPence + billedCsai;
     const billablePence = applyMarkup(costPence, pct);
-    // Allocate the client billable across projects so the lines reconcile to it
-    // (getCostsByClient's client total is exactly Σ project totals).
-    const lineBillable = allocateBillable(
-      c.projects.map((p) => p.totalPence),
+    const [osBillablePence, clientSystemAiBillablePence] = allocateBillable(
+      [osCostPence, billedCsai],
       pct,
       billablePence,
+    ) as [number, number];
+
+    // event-spine provider detail lines (display) for this client.
+    const cp = emittedByClientProvider.get(c.clientId);
+    const providers: CostStatementProviderLine[] = cp
+      ? [...cp.entries()]
+          .map(([provider, pence]) => ({
+            provider,
+            label: statementProviderLabel(provider),
+            pence,
+          }))
+          .sort((a, b) => b.pence - a.pence)
+      : [];
+    const clientEmittedPence = providers.reduce((a, p) => a + p.pence, 0);
+
+    // Allocate the client billable across the projects' billed base (OS +
+    // billed client-system AI) so the per-project lines reconcile exactly.
+    const projBases = c.projects.map(
+      (p) => p.osAgentPence + (includeClientEmitted ? p.clientSystemAiPence : 0),
     );
+    const lineBillable = allocateBillable(projBases, pct, billablePence);
     const projects: CostStatementProject[] = c.projects.map((p, i) => ({
       projectId: p.projectId,
       name: p.name,
-      costPence: p.totalPence,
+      costPence: projBases[i]!,
       billablePence: lineBillable[i]!,
+      osCostPence: p.osAgentPence,
+      clientSystemAiPence: p.clientSystemAiPence,
+      clientEmittedPence: emittedByProject.get(p.projectId) ?? 0,
     }));
+
     return {
       clientId: c.clientId,
       clientName: c.clientName,
@@ -1013,8 +1168,23 @@ export async function getCostStatements(
       markupPence: billablePence - costPence,
       billablePence,
       projects,
+      osCostPence,
+      osBillablePence,
+      clientSystemAiPence,
+      clientSystemAiBillablePence,
+      clientEmittedPence,
+      providers,
+      clientEmittedBilled: includeClientEmitted && clientSystemAiPence > 0,
     };
   });
+
+  const providerTotals: CostStatementProviderLine[] = [...providerTotalsMap.entries()]
+    .map(([provider, pence]) => ({
+      provider,
+      label: statementProviderLabel(provider),
+      pence,
+    }))
+    .sort((a, b) => b.pence - a.pence);
 
   return {
     month: costs.month,
@@ -1025,7 +1195,120 @@ export async function getCostStatements(
       markupPence: outClients.reduce((a, c) => a + c.markupPence, 0),
       billablePence: outClients.reduce((a, c) => a + c.billablePence, 0),
     },
+    includeClientEmitted,
+    totalClientEmittedPence: outClients.reduce(
+      (a, c) => a + c.clientEmittedPence,
+      0,
+    ),
+    providerTotals,
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Margin per client (P9-COST) — (retainer + billable markup) − OS cost
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface ClientMarginPeriod {
+  month: string;
+  osCostPence: number;
+  /** client-system AI cost (tokens_cost_pence rollup) — the second billed
+   *  stream under the statement default. */
+  clientSystemAiPence: number;
+  /** billable markup spread over the billed streams (OS + client-system AI) =
+   *  round(cost×(1+pct/100)) − cost. */
+  markupPence: number;
+  /** LEAD RULING 2026-07-16 (P9-COST B): retainer + markup spread. Reimbursed
+   *  cost is NOT subtracted — the statement bills it back to the client. */
+  marginPence: number;
+}
+
+export interface ClientMargin {
+  clientId: string;
+  clientName: string;
+  status: string;
+  /** active-subscription MRR — the retainer term of the margin. */
+  retainerPence: number;
+  markupPct: number;
+  mtd: ClientMarginPeriod;
+  prior: ClientMarginPeriod;
+}
+
+/**
+ * Per-client margin (P9-COST): margin = (retainer + billable markup) − OS cost,
+ * for the current London month-to-date and the prior full month. Reuses the
+ * existing cost + markup + MRR queries — no new cost math. Deterministic in
+ * (orgId, now).
+ */
+export async function getClientMargins(
+  orgId: string,
+): Promise<{ month: string; priorMonth: string; rows: ClientMargin[] }> {
+  const [priorMonth, month] = trailingMonths(2) as [string, string];
+
+  const [costsMtd, costsPrior, markupRows, mrrRows] = await Promise.all([
+    getCostsByClient(orgId, month),
+    getCostsByClient(orgId, priorMonth),
+    db
+      .select({ id: clients.id, name: clients.name, status: clients.status, markup: clients.costMarkupPct })
+      .from(clients)
+      .where(eq(clients.orgId, orgId)),
+    db
+      .select({
+        clientId: subscriptions.clientId,
+        pence: sql<number>`coalesce(sum(${subscriptions.amountPenceMonthly}), 0)`.mapWith(Number),
+      })
+      .from(subscriptions)
+      .where(and(eq(subscriptions.orgId, orgId), eq(subscriptions.status, "active")))
+      .groupBy(subscriptions.clientId),
+  ]);
+
+  const osMtdByClient = new Map(costsMtd.clients.map((c) => [c.clientId, c.totals.osAgentPence] as const));
+  const osPriorByClient = new Map(costsPrior.clients.map((c) => [c.clientId, c.totals.osAgentPence] as const));
+  const csaiMtdByClient = new Map(costsMtd.clients.map((c) => [c.clientId, c.totals.clientSystemAiPence] as const));
+  const csaiPriorByClient = new Map(costsPrior.clients.map((c) => [c.clientId, c.totals.clientSystemAiPence] as const));
+  const mrrByClient = new Map(mrrRows.map((r) => [r.clientId, Math.round(Number(r.pence))] as const));
+
+  // LEAD RULING 2026-07-16 (P9-COST B): margin = retainer + markup spread over
+  // the streams billed under the statement default (OS + client-system AI). The
+  // reimbursed cost is NOT subtracted — the statement bills it back.
+  const period = (
+    m: string,
+    osCost: number,
+    csaiCost: number,
+    pct: number,
+    retainer: number,
+  ): ClientMarginPeriod => {
+    const billedCost = osCost + csaiCost;
+    const markupPence = applyMarkup(billedCost, pct) - billedCost;
+    return {
+      month: m,
+      osCostPence: osCost,
+      clientSystemAiPence: csaiCost,
+      markupPence,
+      marginPence: retainer + markupPence,
+    };
+  };
+
+  const rows: ClientMargin[] = markupRows
+    .map((c) => {
+      const pct = c.markup ?? DEFAULT_COST_MARKUP_PCT;
+      const retainer = mrrByClient.get(c.id) ?? 0;
+      const osMtd = osMtdByClient.get(c.id) ?? 0;
+      const osPrior = osPriorByClient.get(c.id) ?? 0;
+      const csaiMtd = csaiMtdByClient.get(c.id) ?? 0;
+      const csaiPrior = csaiPriorByClient.get(c.id) ?? 0;
+      return {
+        clientId: c.id,
+        clientName: c.name,
+        status: c.status,
+        retainerPence: retainer,
+        markupPct: pct,
+        mtd: period(month, osMtd, csaiMtd, pct, retainer),
+        prior: period(priorMonth, osPrior, csaiPrior, pct, retainer),
+      };
+    })
+    .sort((a, b) => b.mtd.marginPence - a.mtd.marginPence);
+
+  return { month, priorMonth, rows };
 }
 
 // ── client markup editor (PATCH /api/clients/[clientId]/markup) ──────────────

@@ -18,10 +18,13 @@ import {
   agentRuns,
   aggregateValueSQL,
   bookings,
+  briefs,
   bucketStartSQL,
   clients,
   db,
   events,
+  expenses,
+  feedbackItems,
   industries,
   insights,
   isoUTC,
@@ -30,17 +33,23 @@ import {
   metricDefinitions,
   metricRollups,
   organizations,
+  payments,
   projectKeys,
   projects,
   runRollups,
   subscriptions,
   toEvaluable,
+  upsellProposals,
   webhookDeliveries,
   type Aggregation,
   type Db,
 } from "@azen/db";
 import { DEFAULT_HOURLY_RATE_PENCE } from "@azen/config";
-import { generateKeyPair, generateSecret } from "@azen/db/keys";
+import {
+  generateFeedbackKey,
+  generateKeyPair,
+  generateSecret,
+} from "@azen/db/keys";
 import {
   encodeEventsCursor,
   type ClientCreateInput,
@@ -329,6 +338,8 @@ export type CreateProjectResult =
       ok: true;
       project: typeof projects.$inferSelect;
       key: { publicKey: string; secret: string; authMode: "hmac" | "token" };
+      /** Phase 7 §B: the public feedback-widget key (no secret). */
+      feedbackPublicKey: string;
     };
 
 export async function createProject(
@@ -379,7 +390,7 @@ export async function createProject(
       .returning();
     if (!project) throw new Error("project insert returned no row");
 
-    const authMode = (input.stack ?? "custom_code") === "ghl" ? "token" : "hmac";
+    const authMode = "hmac" as const;
     const pair = generateKeyPair();
     await tx.insert(projectKeys).values({
       orgId,
@@ -388,11 +399,25 @@ export async function createProject(
       secretHash: pair.secretHash,
       secretCiphertext: pair.secretCiphertext,
       authMode,
+      kind: "ingest",
+    });
+    // Phase 7 §B: also provision a PUBLIC feedback key (no secret shipped) so
+    // the embeddable widget works the moment a project exists.
+    const fb = generateFeedbackKey();
+    await tx.insert(projectKeys).values({
+      orgId,
+      projectId: project.id,
+      publicKey: fb.publicKey,
+      secretHash: fb.secretHash,
+      authMode: "token",
+      kind: "feedback",
+      label: "feedback widget key",
     });
     return {
       ok: true,
       project,
       key: { publicKey: pair.publicKey, secret: pair.secret, authMode },
+      feedbackPublicKey: fb.publicKey,
     };
   });
 }
@@ -468,9 +493,113 @@ export async function updateProject(
   return row;
 }
 
+/**
+ * Owner action: permanently delete a project. A cross-org or unknown id is an
+ * indistinguishable "not found" (returns false → the route answers 404 and
+ * nothing is touched). One transaction handles EVERY foreign key against
+ * `projects` deliberately (verified against live information_schema):
+ *
+ *  - AGENCY-LEDGER money must SURVIVE (two-ledger rule §10). payments,
+ *    subscriptions and expenses are the org's own money history — re-point them
+ *    to project_id NULL, never delete, or MRR/cash reporting corrupts.
+ *  - upsell_proposals.project_id is NULLABLE → SET NULL preserves won-revenue
+ *    history at the client level (the proposal still belongs to the client).
+ *  - Project-scoped record data DIES with the project: events, bookings and
+ *    insights where project_id matches, plus project-scoped briefs
+ *    (scope='project'). Org-level rows (project_id NULL / scope='agency') are
+ *    untouched by definition.
+ *  - Everything else FK'd to projects is handled by the DB: ON DELETE CASCADE
+ *    (alert_rules, feedback_items, metric_definitions, metric_rollups,
+ *    project_credentials, project_integrations, project_keys,
+ *    rollup_watermarks) or ON DELETE SET NULL (agent_runs — AI cost history
+ *    survives unattributed). Deleting the project row last fires those.
+ *
+ * Statements are ordered so the NO-ACTION foreign keys are cleared BEFORE the
+ * project row is removed — no FK violation is ever possible.
+ */
+export async function deleteProject(
+  orgId: string,
+  projectId: string,
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    // Existence + org scope in one shot; a cross-org row never matches → false.
+    const [found] = await tx
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.orgId, orgId), eq(projects.id, projectId)))
+      .limit(1);
+    if (!found) return false;
+
+    // 1. AGENCY-LEDGER money survives — re-point to NULL (never delete: §10).
+    await tx
+      .update(payments)
+      .set({ projectId: null })
+      .where(and(eq(payments.orgId, orgId), eq(payments.projectId, projectId)));
+    await tx
+      .update(subscriptions)
+      .set({ projectId: null })
+      .where(
+        and(
+          eq(subscriptions.orgId, orgId),
+          eq(subscriptions.projectId, projectId),
+        ),
+      );
+    await tx
+      .update(expenses)
+      .set({ projectId: null })
+      .where(and(eq(expenses.orgId, orgId), eq(expenses.projectId, projectId)));
+
+    // 2. Upsell proposals: project_id is nullable → SET NULL keeps the
+    //    won-revenue history attached to the client.
+    await tx
+      .update(upsellProposals)
+      .set({ projectId: null })
+      .where(
+        and(
+          eq(upsellProposals.orgId, orgId),
+          eq(upsellProposals.projectId, projectId),
+        ),
+      );
+
+    // 3. Project-scoped record data dies with the project.
+    await tx
+      .delete(events)
+      .where(and(eq(events.orgId, orgId), eq(events.projectId, projectId)));
+    await tx
+      .delete(bookings)
+      .where(and(eq(bookings.orgId, orgId), eq(bookings.projectId, projectId)));
+    await tx
+      .delete(insights)
+      .where(and(eq(insights.orgId, orgId), eq(insights.projectId, projectId)));
+    // Only project-scoped briefs; agency briefs (scope='agency') are untouched.
+    await tx
+      .delete(briefs)
+      .where(
+        and(
+          eq(briefs.orgId, orgId),
+          eq(briefs.scope, "project"),
+          eq(briefs.projectId, projectId),
+        ),
+      );
+
+    // 4. Finally the project row — DB-level CASCADE (project_keys,
+    //    project_credentials, project_integrations, metric_definitions,
+    //    metric_rollups, rollup_watermarks, alert_rules, feedback_items) and
+    //    SET NULL (agent_runs) fire here.
+    await tx
+      .delete(projects)
+      .where(and(eq(projects.orgId, orgId), eq(projects.id, projectId)));
+    return true;
+  });
+}
+
 // ── keys: rotate / revoke ────────────────────────────────────────────────────
 
-async function findActiveKey(orgId: string, projectId: string) {
+async function findActiveKey(
+  orgId: string,
+  projectId: string,
+  kind: "ingest" | "feedback" = "ingest",
+) {
   const [key] = await db
     .select({
       id: projectKeys.id,
@@ -483,6 +612,7 @@ async function findActiveKey(orgId: string, projectId: string) {
       and(
         eq(projectKeys.orgId, orgId),
         eq(projectKeys.projectId, projectId),
+        eq(projectKeys.kind, kind),
         isNull(projectKeys.revokedAt),
       ),
     )
@@ -493,7 +623,7 @@ async function findActiveKey(orgId: string, projectId: string) {
 
 /** New secret under the same public key; the old secret dies now (§6.1). */
 export async function rotateActiveKey(orgId: string, projectId: string) {
-  const key = await findActiveKey(orgId, projectId);
+  const key = await findActiveKey(orgId, projectId, "ingest");
   if (!key) return null;
   const material = generateSecret();
   await db
@@ -506,9 +636,9 @@ export async function rotateActiveKey(orgId: string, projectId: string) {
   return { publicKey: key.publicKey, secret: material.secret };
 }
 
-/** Revoke the active key and issue a fresh pair — new endpoint URL (§6.1). */
+/** Revoke the active ingest key and issue a fresh pair — new URL (§6.1). */
 export async function revokeAndReissueKey(orgId: string, projectId: string) {
-  const key = await findActiveKey(orgId, projectId);
+  const key = await findActiveKey(orgId, projectId, "ingest");
   if (!key) return null;
   const pair = generateKeyPair();
   await db.transaction(async (tx) => {
@@ -524,6 +654,7 @@ export async function revokeAndReissueKey(orgId: string, projectId: string) {
       secretCiphertext: pair.secretCiphertext,
       authMode: key.authMode,
       rateLimitPer10s: key.rateLimitPer10s,
+      kind: "ingest",
     });
   });
   return {
@@ -531,6 +662,37 @@ export async function revokeAndReissueKey(orgId: string, projectId: string) {
     secret: pair.secret,
     authMode: key.authMode,
   };
+}
+
+/**
+ * Phase 7 §B: revoke the active PUBLIC feedback key and mint a new one. There
+ * is no secret to rotate, so this is the only feedback-key lifecycle op — the
+ * old widget key stops working immediately and every embed must be re-pasted.
+ */
+export async function revokeAndReissueFeedbackKey(
+  orgId: string,
+  projectId: string,
+) {
+  const key = await findActiveKey(orgId, projectId, "feedback");
+  const fb = generateFeedbackKey();
+  await db.transaction(async (tx) => {
+    if (key) {
+      await tx
+        .update(projectKeys)
+        .set({ revokedAt: new Date() })
+        .where(eq(projectKeys.id, key.id));
+    }
+    await tx.insert(projectKeys).values({
+      orgId,
+      projectId,
+      publicKey: fb.publicKey,
+      secretHash: fb.secretHash,
+      authMode: "token",
+      kind: "feedback",
+      label: "feedback widget key",
+    });
+  });
+  return { publicKey: fb.publicKey };
 }
 
 // ── project events (keyset pagination) ───────────────────────────────────────
@@ -1066,6 +1228,12 @@ export async function getMetricSeries(
   orgId: string,
   projectId: string,
   query: MetricSeriesQuery,
+  /**
+   * Optional pre-resolved effective definitions. Callers that already resolved
+   * them (e.g. to pick `query.keys`) can pass them through to avoid a redundant
+   * identical metric_definitions SELECT on the hot path.
+   */
+  preResolvedDefs?: EffectiveMetricDefinition[],
 ): Promise<MetricSeriesResult> {
   const period = query.period;
   const toDate = query.to ?? toDateStr(londonTodayUTC());
@@ -1073,7 +1241,9 @@ export async function getMetricSeries(
   const mainStart = londonInstant(fromDate);
   const mainEnd = londonInstant(shiftDateStr(toDate, 1));
 
-  const effective = await resolveEffectiveMetricDefinitions(orgId, projectId);
+  const effective =
+    preResolvedDefs ??
+    (await resolveEffectiveMetricDefinitions(orgId, projectId));
   const realByKey = new Map(effective.map((d) => [d.key, d] as const));
 
   const requestedReal: string[] = [];
@@ -1372,6 +1542,41 @@ export async function updateInsightStatus(
       status: insights.status,
       evidence: insights.evidence,
       createdAt: insights.createdAt,
+    });
+  return row;
+}
+
+/**
+ * Phase 7 §B2 — triage board status transition for one feedback_items row.
+ * Scoped by (orgId, projectId, itemId): a cross-org OR cross-project id
+ * matches nothing and the caller 404s (indistinguishable from "not found").
+ */
+export async function updateFeedbackItemStatus(
+  orgId: string,
+  projectId: string,
+  itemId: string,
+  status: "new" | "seen" | "planned" | "done",
+) {
+  const [row] = await db
+    .update(feedbackItems)
+    .set({ status })
+    .where(
+      and(
+        eq(feedbackItems.orgId, orgId),
+        eq(feedbackItems.projectId, projectId),
+        eq(feedbackItems.id, itemId),
+      ),
+    )
+    .returning({
+      id: feedbackItems.id,
+      kind: feedbackItems.kind,
+      message: feedbackItems.message,
+      severity: feedbackItems.severity,
+      submitterName: feedbackItems.submitterName,
+      submitterEmail: feedbackItems.submitterEmail,
+      pageUrl: feedbackItems.pageUrl,
+      status: feedbackItems.status,
+      createdAt: feedbackItems.createdAt,
     });
   return row;
 }

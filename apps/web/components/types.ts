@@ -78,6 +78,7 @@ export interface ProjectKeyView {
   id: string;
   publicKey: string;
   authMode: string;
+  kind: "ingest" | "feedback";
   rateLimitPer10s: number;
   createdAt: string;
   revokedAt: string | null;
@@ -149,6 +150,8 @@ export interface CreateProjectResponse {
     status: string;
   };
   key: IssuedKey;
+  /** Public (no-secret) feedback-widget key, provisioned alongside every new project. */
+  feedbackPublicKey: string;
 }
 
 export interface RotateResponse {

@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "health:run": "tsx scripts/health-run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
@@ -29,6 +30,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.8.0",
     "vitest": "^3.0.0"
   }

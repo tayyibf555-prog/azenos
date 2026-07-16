@@ -1,8 +1,11 @@
 import type { Db } from "@azen/db";
 import type {
   DailyPack,
+  DailyPackFeedback,
+  DailyPackFeedbackCounts,
   DailyPackInsight,
   DailyPackKpi,
+  DailyPackNotableFeedback,
   DailyPackProject,
 } from "./types";
 
@@ -83,6 +86,32 @@ interface BaselineRow {
   rev_7: number;
 }
 
+interface FeedbackCountRow {
+  project_id: string;
+  kind: string;
+  count: number;
+}
+
+interface FeedbackNotableRow {
+  project_id: string;
+  kind: string;
+  message: string;
+  severity: number | null;
+}
+
+/** Phase 7 §B3: notable feedback message cap (chars) so the pack stays bounded. */
+const FEEDBACK_MESSAGE_CAP = 140;
+/** Up to N notable feedback items surfaced per project. */
+const MAX_NOTABLE_FEEDBACK = 3;
+
+const ZERO_FEEDBACK_COUNTS: DailyPackFeedbackCounts = {
+  bug: 0,
+  feature: 0,
+  question: 0,
+  praise: 0,
+  other: 0,
+};
+
 export async function buildAgencyDailyPack(
   db: Db,
   orgId: string,
@@ -160,6 +189,54 @@ export async function buildAgencyDailyPack(
     anomaliesByProject.set(r.project_id, list);
   }
 
+  // ── yesterday's feedback: per-project counts by kind ────────────────────────
+  const feedbackCountRows = (await client`
+    select project_id::text as project_id, kind::text as kind, count(*)::int as count
+    from feedback_items
+    where org_id = ${orgId}::uuid
+      and created_at >= ${d}::timestamptz
+      and created_at < (${d}::timestamptz at time zone 'Europe/London' + interval '1 day') at time zone 'Europe/London'
+    group by project_id, kind
+  `) as unknown as FeedbackCountRow[];
+  const feedbackCountsByProject = new Map<string, DailyPackFeedbackCounts>();
+  for (const r of feedbackCountRows) {
+    const counts =
+      feedbackCountsByProject.get(r.project_id) ?? { ...ZERO_FEEDBACK_COUNTS };
+    const kind = r.kind as keyof DailyPackFeedbackCounts;
+    if (kind in counts) counts[kind] = num(r.count);
+    feedbackCountsByProject.set(r.project_id, counts);
+  }
+
+  // ── yesterday's feedback: up to MAX_NOTABLE_FEEDBACK per project, severity
+  // desc (nulls last) then most-recent first — the ordering the brief prompt
+  // relies on to lead with bugs/severe items. ─────────────────────────────────
+  const feedbackNotableRows = (await client`
+    select project_id::text as project_id, kind::text as kind, message, severity
+    from (
+      select project_id, kind, message, severity, created_at,
+        row_number() over (
+          partition by project_id
+          order by severity desc nulls last, created_at desc
+        ) as rn
+      from feedback_items
+      where org_id = ${orgId}::uuid
+        and created_at >= ${d}::timestamptz
+        and created_at < (${d}::timestamptz at time zone 'Europe/London' + interval '1 day') at time zone 'Europe/London'
+    ) ranked
+    where rn <= ${MAX_NOTABLE_FEEDBACK}
+    order by project_id, rn
+  `) as unknown as FeedbackNotableRow[];
+  const notableByProject = new Map<string, DailyPackNotableFeedback[]>();
+  for (const r of feedbackNotableRows) {
+    const list = notableByProject.get(r.project_id) ?? [];
+    list.push({
+      kind: r.kind,
+      message: r.message.slice(0, FEEDBACK_MESSAGE_CAP),
+      severity: numOrNull(r.severity),
+    });
+    notableByProject.set(r.project_id, list);
+  }
+
   // ── per-project KPI stats (effective global∪override defs, isKpi only) ──────
   const projects: DailyPackProject[] = [];
   for (const p of projectRows) {
@@ -222,6 +299,10 @@ export async function buildAgencyDailyPack(
         p.hours_since === null ? null : round2(num(p.hours_since)),
       openAnomalies: anomaliesByProject.get(p.id) ?? [],
       errorCountYesterday: num(p.error_count_yday),
+      feedback: {
+        yesterday: feedbackCountsByProject.get(p.id) ?? { ...ZERO_FEEDBACK_COUNTS },
+        notable: notableByProject.get(p.id) ?? [],
+      } satisfies DailyPackFeedback,
     });
   }
 

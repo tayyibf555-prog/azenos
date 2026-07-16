@@ -16,7 +16,7 @@
 
 import { withSharedTone } from "./shared";
 
-export const MONTHLY_PROMPT_VERSION = "monthly-2026-07-13";
+export const MONTHLY_PROMPT_VERSION = "monthly-2026-07-16";
 
 const ROLE = [
   "# Role",
@@ -48,6 +48,10 @@ const INPUT = [
   "  roiMultiple, bookingsMade, conversationsHandled, resolvedRate, hoursSaved,",
   "  revenueTouchedPence, and topOpportunities[] (the dossier seed — automation",
   "  opportunities/upsells/scout-flagged clusters with confidence + estimated value).",
+  "- clients[].benchmark: null, or {industryName, sampleClients (≥3), metrics[]} where",
+  "  each metric is {label, clientValue, median, standing ('ahead'|'near'|'behind')} —",
+  "  an ANONYMISED peer comparison (this client's value vs the industry median only).",
+  "  It carries NO other client's number or name; sampleClients is the peer count.",
   "- weeklyBriefs[]: the month's weekly editions {periodStart, headline, excerptMd} —",
   "  cite these for the real week-over-week story. priorMonthlyOwnerBrief: last month's.",
   "- insights[]: EVERY insight, any status INCLUDING dismissed; insightStatusCounts and",
@@ -106,6 +110,10 @@ const RULES = [
   "  Use the pack's figures verbatim; do not recompute or round them.",
   "- Client value reports are external: never leak agency cost, margin, other clients,",
   "  or internal insight text into a client_report body.",
+  "- If a client has benchmark data, you MAY reference it in their client_report to add",
+  "  context (e.g. 'ahead of the median {industryName} practice on hours saved'), citing",
+  "  ONLY their own value and the median — never another client's number, name, or count",
+  "  beyond sampleClients. If benchmark is null, say nothing about peer comparisons.",
   "- Upsell dossiers are internal and draw ONLY from the client's topOpportunities.",
   "- Emit EXACTLY one client_report and one upsell_dossier per active client in the",
   "  pack — no more, no fewer — and use each clientId verbatim.",

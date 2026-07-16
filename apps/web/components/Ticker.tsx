@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatPence } from "../lib/format";
 import { RelativeTime } from "./RelativeTime";
-import { eventCategory, tint } from "./ui";
+import { COLORS, tint } from "./ui";
+import { IconSquircle } from "./system/IconSquircle";
+import { eventTone } from "./system/tokens";
 import { usePolling } from "./usePolling";
 import type { TickerEvent, TickerResponse } from "./types";
 
@@ -67,7 +69,7 @@ export function Ticker() {
               height: 8,
               borderRadius: "50%",
               background: paused ? "var(--text-3)" : "var(--green)",
-              boxShadow: paused ? "none" : `0 0 0 3px ${tint("#3fb27f", 0.18)}`,
+              boxShadow: paused ? "none" : `0 0 0 3px ${tint(COLORS.green, 0.18)}`,
             }}
             aria-hidden
           />
@@ -111,58 +113,47 @@ export function Ticker() {
           </div>
         )}
 
-        {events.map((e) => {
-          const cat = eventCategory(e.type);
-          return (
-            <div
-              key={e.id}
-              className="row-in"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "9px 16px",
-                borderBottom: "1px solid var(--border)",
-                fontSize: 13,
-              }}
-            >
-              <RelativeTime
-                value={e.receivedAt}
-                className="faint"
-              />
+        {events.map((e) => (
+          <div
+            key={e.id}
+            className="row-in sys-eventchip"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 11,
+              padding: "7px 14px",
+              borderBottom: "1px solid var(--border)",
+              fontSize: 13,
+            }}
+          >
+            <IconSquircle tone={eventTone(e.type)} icon="spark" size={28} />
+            <span style={{ minWidth: 0, flex: 1, display: "grid", gap: 1 }}>
               <span
-                className="badge badge-mono"
-                style={{
-                  color: cat.color,
-                  background: tint(cat.color, 0.12),
-                  borderColor: tint(cat.color, 0.26),
-                  flex: "none",
-                }}
+                className="mono truncate"
+                style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text)" }}
               >
                 {e.type}
               </span>
-              <span
-                className="muted truncate"
-                style={{ flex: "none", maxWidth: 150 }}
-                title={e.projectName}
-              >
+              <span className="faint truncate" style={{ fontSize: 11.5 }}>
                 {e.projectName}
+                {e.subjectName ? ` · ${e.subjectName}` : ""}
               </span>
-              <span className="truncate" style={{ flex: 1, color: "var(--text-2)" }}>
-                {e.subjectName ?? ""}
+            </span>
+            {e.valuePence != null ? (
+              <span style={{ flex: "none", color: "var(--green)", fontWeight: 600, fontSize: 12.5 }}>
+                {formatPence(e.valuePence)}
               </span>
-              {e.valuePence != null ? (
-                <span style={{ flex: "none", color: "var(--green)", fontWeight: 550 }}>
-                  {formatPence(e.valuePence)}
-                </span>
-              ) : e.minutesSaved != null ? (
-                <span className="faint" style={{ flex: "none" }}>
-                  {e.minutesSaved} min saved
-                </span>
-              ) : null}
-            </div>
-          );
-        })}
+            ) : e.minutesSaved != null ? (
+              <span className="faint" style={{ flex: "none", fontSize: 11.5 }}>
+                {e.minutesSaved} min saved
+              </span>
+            ) : null}
+            <RelativeTime
+              value={e.receivedAt}
+              className="faint"
+            />
+          </div>
+        ))}
       </div>
     </section>
   );

@@ -39,7 +39,7 @@ function sharedRules(): string {
     "## Output rules",
     "- Return ONLY the structured object requested (the schema is enforced).",
     `- ${ENUM_LINE("Project type must be one of", projectType.enumValues)}.`,
-    `- ${ENUM_LINE("Project stack must be one of", projectStack.enumValues)} (default custom_code unless a no-code tool like GoHighLevel/GHL → ghl, or n8n → n8n, or a blend → mixed).`,
+    `- ${ENUM_LINE("Project stack must be one of", projectStack.enumValues)} (default custom_code; a low-code workflow tool like n8n → n8n, or a blend of code and no-code → mixed).`,
     "- description: 1–2 crisp, client-facing sentences describing what the system does.",
     "",
     "## Client matching",

@@ -21,7 +21,6 @@ export const projectType = pgEnum("project_type", [
 
 export const projectStack = pgEnum("project_stack", [
   "custom_code",
-  "ghl",
   "n8n",
   "mixed",
 ]);
@@ -44,21 +43,26 @@ export const projectHealth = pgEnum("project_health", [
 
 export const keyAuthMode = pgEnum("key_auth_mode", ["hmac", "token"]);
 
+// Phase 7: least-privilege key kinds. 'ingest' keys drive §6 event ingest
+// (HMAC/token); 'feedback' keys are PUBLIC, browser-embeddable, and can ONLY
+// create feedback.submitted events via /api/feedback/[publicKey].
+export const keyKind = pgEnum("key_kind", ["ingest", "feedback"]);
+
 export const integrationProvider = pgEnum("integration_provider", [
   "stripe",
   "calendly",
-  "ghl",
   "twilio",
   "custom",
 ]);
 
 export const eventSource = pgEnum("event_source", [
   "sdk",
-  "ghl",
   "stripe",
   "calendly",
   "manual",
   "import",
+  // Phase 7: the public feedback webhook (docs/phase7/PLAN.md §B)
+  "feedback",
 ]);
 
 export const metricUnit = pgEnum("metric_unit", [
@@ -228,10 +232,53 @@ export const alertKind = pgEnum("alert_kind", [
   "payment_overdue",
   "anomaly",
   "custom",
+  // Phase 9 §P9-COST: client API-spend spike (7d > 1.4× prior 7d AND > £5)
+  "cost_spike",
 ]);
 
 export const alertChannel = pgEnum("alert_channel", [
   "whatsapp",
   "email",
   "both",
+]);
+
+// ── Phase 7 (docs/phase7/PLAN.md) ────────────────────────────────────────────
+
+// §B — feedback.submitted intake (bugs / feature requests from client staff).
+export const feedbackKind = pgEnum("feedback_kind", [
+  "bug",
+  "feature",
+  "question",
+  "praise",
+  "other",
+]);
+
+export const feedbackStatus = pgEnum("feedback_status", [
+  "new",
+  "seen",
+  "planned",
+  "done",
+]);
+
+// §C — per-project Connections vault (owner-entered, AES-256-GCM at rest).
+// Matches the owner's actual client stack; 'custom' covers everything else.
+export const credentialProvider = pgEnum("credential_provider", [
+  "anthropic",
+  "openai",
+  "twilio",
+  "higgsfield",
+  "custom",
+]);
+
+// ── Phase 8 (docs/phase8/CONTRACTS.md) ───────────────────────────────────────
+
+// Public share links: white-label monthly client reports + sent proposals.
+export const shareKind = pgEnum("share_kind", ["monthly_report", "proposal"]);
+
+// Health Center alert instances (rules live in alert_rules; instances are the
+// firings the grid acks/resolves).
+export const alertSeverity = pgEnum("alert_severity", [
+  "info",
+  "warn",
+  "critical",
 ]);
