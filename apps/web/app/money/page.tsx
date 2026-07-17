@@ -6,7 +6,8 @@ import { AddPaymentPanel } from "../../components/money/AddPaymentPanel";
 import { CostStatementsPanel } from "../../components/money/CostStatementsPanel";
 import { ExpensesPanel } from "../../components/money/ExpensesPanel";
 import { MoneyCharts } from "../../components/money/MoneyCharts";
-import { COLORS, tint } from "../../components/ui";
+import { StatusPill } from "../../components/StatusPill";
+import { Pill } from "../../components/system";
 import type {
   ClientOption,
   ExpenseRow,
@@ -27,20 +28,11 @@ import { requireOrgId } from "../../lib/server/org";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_COLOR: Record<string, string> = {
-  active: COLORS.green,
-  paused: COLORS.amber,
-  churned: COLORS.red,
-  lead: COLORS.blue,
-  discovery: COLORS.teal,
-  proposal: COLORS.violet,
-};
-
 function Money({ pence, accent }: { pence: number; accent?: boolean }) {
   return (
     <span
       className="tnum"
-      style={{ color: accent ? (pence < 0 ? "var(--red)" : COLORS.green) : undefined }}
+      style={{ color: accent ? (pence < 0 ? "var(--red)" : "var(--green)") : undefined }}
     >
       {formatPence(pence)}
     </span>
@@ -66,7 +58,7 @@ export default async function MoneyPage() {
 
       {dbError || !data ? (
         <div className="card" style={{ padding: 20 }}>
-          <strong style={{ color: COLORS.red }}>Database not reachable.</strong>
+          <strong style={{ color: "var(--red)" }}>Database not reachable.</strong>
           <pre className="codeblock" style={{ marginTop: 8 }}>{dbError}</pre>
         </div>
       ) : (
@@ -81,17 +73,17 @@ export default async function MoneyPage() {
             <StatCard
               label="Cash in · this month"
               value={<span className="tnum">{formatPence(data.overview.cashInThisMonthPence)}</span>}
-              accent={COLORS.green}
+              accent="var(--green)"
             />
             <StatCard
               label="Cash out · this month"
               value={<span className="tnum">{formatPence(data.overview.cashOutThisMonthPence)}</span>}
-              accent={COLORS.red}
+              accent="var(--red)"
             />
             <StatCard
               label="Net · this month"
               value={<span className="tnum">{formatPence(data.overview.netThisMonthPence)}</span>}
-              accent={data.overview.netThisMonthPence < 0 ? COLORS.red : COLORS.green}
+              accent={data.overview.netThisMonthPence < 0 ? "var(--red)" : "var(--green)"}
             />
             <StatCard
               label="Retainer coverage"
@@ -106,7 +98,7 @@ export default async function MoneyPage() {
               label="Overdue retainers"
               value={<span className="tnum">{data.retainers.totals.overdueCount}</span>}
               sub={data.retainers.totals.overduePence > 0 ? `${formatPence(data.retainers.totals.overduePence)} outstanding` : "all collected"}
-              accent={data.retainers.totals.overdueCount > 0 ? COLORS.amber : undefined}
+              accent={data.retainers.totals.overdueCount > 0 ? "var(--amber)" : undefined}
             />
           </div>
 
@@ -136,9 +128,9 @@ export default async function MoneyPage() {
                     {data.byClient.clients.map((c) => (
                       <tr key={c.clientId}>
                         <td>
-                          {c.clientName}{" "}
-                          <span className="badge" style={{ color: STATUS_COLOR[c.status] ?? COLORS.grey, marginLeft: 4 }}>
-                            {c.status}
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            {c.clientName}
+                            <StatusPill status={c.status} />
                           </span>
                         </td>
                         <td className="tnum" style={{ textAlign: "right", fontWeight: 600 }}>{formatPence(c.ltvPence)}</td>
@@ -179,15 +171,11 @@ export default async function MoneyPage() {
                         <td className="tnum" style={{ textAlign: "right" }}>{formatPence(r.receivedPence)}</td>
                         <td style={{ textAlign: "right" }}>
                           {r.overdue ? (
-                            <span
-                              className="badge"
-                              style={{ color: COLORS.amber, background: tint(COLORS.amber, 0.12) }}
-                              title={`${formatPence(r.shortfallPence)} short`}
-                            >
-                              overdue
+                            <span title={`${formatPence(r.shortfallPence)} short`}>
+                              <Pill tone="butter">overdue</Pill>
                             </span>
                           ) : (
-                            <span className="badge" style={{ color: COLORS.green }}>paid</span>
+                            <Pill tone="mint">paid</Pill>
                           )}
                         </td>
                       </tr>
@@ -301,7 +289,7 @@ export default async function MoneyPage() {
               </div>
               <div>
                 <div className="muted" style={{ fontSize: 12 }}>Retainers under management</div>
-                <div className="tnum" style={{ fontSize: 22, fontWeight: 640, marginTop: 4, color: COLORS.green }}>
+                <div className="tnum" style={{ fontSize: 22, fontWeight: 640, marginTop: 4, color: "var(--green)" }}>
                   {formatPence(data.osRoi.retainersUnderManagementPence)}
                 </div>
                 <div className="faint" style={{ fontSize: 12 }}>outcome · placeholder (§10)</div>
@@ -311,8 +299,10 @@ export default async function MoneyPage() {
                   <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Spend by agent</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {data.osRoi.byAgent.map((a) => (
-                      <span key={a.agent} className="badge tnum" style={{ background: tint(COLORS.teal, 0.1), color: COLORS.teal }}>
-                        {a.agent.replace(/_/g, " ")} · {formatPence(a.pence)}
+                      <span key={a.agent} className="tnum">
+                        <Pill tone="lavender">
+                          {a.agent.replace(/_/g, " ")} · {formatPence(a.pence)}
+                        </Pill>
                       </span>
                     ))}
                   </div>

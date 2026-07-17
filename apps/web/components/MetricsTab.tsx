@@ -334,7 +334,7 @@ export function MetricsTab({ projectId }: { projectId: string }) {
                 <div
                   style={{
                     fontSize: 24,
-                    fontWeight: 700,
+                    fontWeight: 660,
                     letterSpacing: "-0.02em",
                     marginTop: 6,
                   }}
@@ -370,7 +370,12 @@ export function MetricsTab({ projectId }: { projectId: string }) {
       >
         <div
           className="card"
-          style={{ display: "inline-flex", padding: 3, gap: 2, borderRadius: 10 }}
+          style={{
+            display: "inline-flex",
+            padding: 3,
+            gap: 2,
+            borderRadius: "var(--radius-pill)",
+          }}
           role="group"
           aria-label="Date range"
         >

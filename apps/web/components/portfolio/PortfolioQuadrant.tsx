@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatPence } from "../../lib/format";
 import { COLORS } from "../ui";
+import { TINTS } from "../system";
 
 /**
  * Value-vs-cost quadrant (P9-PACK3 — app/portfolio/page.tsx). Lives behind an
@@ -26,10 +27,11 @@ export interface QuadrantPoint {
   health: "green" | "amber" | "red";
 }
 
+// Same mint/butter/rose health language as the grid, badges and stat cards.
 const HEALTH_COLOR: Record<QuadrantPoint["health"], string> = {
-  green: COLORS.green,
-  amber: COLORS.amber,
-  red: COLORS.red,
+  green: TINTS.mint.fg,
+  amber: TINTS.butter.fg,
+  red: TINTS.rose.fg,
 };
 
 const W = 600;

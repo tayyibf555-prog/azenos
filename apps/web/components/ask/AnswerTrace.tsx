@@ -99,8 +99,9 @@ export function AnswerTrace({ trace }: { trace: ToolTraceItem[] }) {
               {t.resultSummary !== undefined && (
                 <div
                   style={{
-                    borderTop: "1px solid var(--border)",
-                    paddingTop: 6,
+                    background: "var(--bg-well)",
+                    borderRadius: "var(--radius-tile)",
+                    padding: "6px 8px",
                     marginTop: 1,
                   }}
                 >

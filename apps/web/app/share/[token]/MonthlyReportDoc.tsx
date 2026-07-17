@@ -5,7 +5,7 @@ import type { ClientBenchmark } from "../../../lib/server/benchmarks";
 import type { SharedMonthlyReport } from "../../../lib/server/share";
 import { ShareShell } from "./ShareShell";
 
-/** One headline value tile (calm, single hue — royal-soft numbers on glass). */
+/** One headline value tile — RECIPE §3: solid warm ink, no gradients anywhere. */
 function ValueTile({
   label,
   value,
@@ -42,11 +42,7 @@ function ValueTile({
           fontWeight: 680,
           letterSpacing: "-0.02em",
           lineHeight: 1.1,
-          background:
-            "linear-gradient(180deg, var(--text), var(--accent-2))",
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          color: "transparent",
+          color: "var(--ink)",
         }}
       >
         {value}

@@ -1,6 +1,6 @@
 "use client";
 
-import { COLORS, tint } from "../ui";
+import { TINTS } from "../system/tokens";
 import { formatElapsed, type DictationController } from "../../lib/useDictation";
 
 /**
@@ -47,9 +47,8 @@ export function DictationMic({
           aria-label="Stop recording"
           title="Stop recording (auto-stops at 1:30)"
           style={{
-            color: COLORS.teal,
-            borderColor: tint(COLORS.teal, 0.5),
-            background: tint(COLORS.teal, 0.14),
+            color: TINTS.sky.fg,
+            background: TINTS.sky.bg,
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -94,9 +93,8 @@ export function DictationMic({
       style={
         listening
           ? {
-              color: COLORS.teal,
-              borderColor: tint(COLORS.teal, 0.5),
-              background: tint(COLORS.teal, 0.14),
+              color: TINTS.sky.fg,
+              background: TINTS.sky.bg,
             }
           : undefined
       }

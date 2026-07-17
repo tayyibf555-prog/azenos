@@ -56,7 +56,7 @@ function SeriesPreview({ points, meta }: { points: number[]; meta: Record<string
   const last = points[points.length - 1];
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <Sparkline points={points} color="var(--accent)" />
+      <Sparkline points={points} color="var(--ink)" />
       <div className="mono" style={{ fontSize: 11.5, color: "var(--text-2)", lineHeight: 1.5 }}>
         <div style={{ color: "var(--text)" }}>{name}</div>
         <div>

@@ -20,8 +20,7 @@ export function ShareShell({
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(1200px 600px at 50% -10%, rgba(52,87,213,0.10), transparent 60%), var(--bg)",
+        background: "var(--bg)",
         color: "var(--text)",
         fontFamily: "var(--sans)",
         padding: "clamp(20px, 5vw, 56px) 20px 72px",
@@ -43,13 +42,12 @@ export function ShareShell({
             style={{
               width: 30,
               height: 30,
-              borderRadius: 8,
+              borderRadius: "var(--radius-icon)",
               display: "grid",
               placeItems: "center",
-              background:
-                "linear-gradient(135deg, var(--accent), var(--accent-2))",
-              color: "var(--accent-ink)",
-              fontWeight: 800,
+              background: "var(--ink)",
+              color: "var(--on-pill)",
+              fontWeight: 700,
               fontSize: 14,
               flex: "none",
             }}
@@ -74,9 +72,8 @@ export function ShareShell({
 
         <footer
           style={{
-            marginTop: 8,
+            marginTop: 16,
             paddingTop: 16,
-            borderTop: "1px solid var(--border)",
             fontSize: 11.5,
             color: "var(--text-3)",
             display: "flex",

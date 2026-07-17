@@ -30,9 +30,8 @@ export function NewProjectEntry({
           gap: 3,
           padding: 3,
           marginBottom: 22,
-          background: "var(--card-2)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-sm)",
+          background: "var(--bg-well)",
+          borderRadius: "var(--radius-pill)",
         }}
       >
         <button

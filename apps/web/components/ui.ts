@@ -13,7 +13,7 @@
  * Chart-line order (spec): royal → green → slate → warm-gray → muted-amber.
  */
 export const COLORS = {
-  blue: "#3457D5", // royal blue — primary accent, chart lead
+  blue: "#255E9E", // deep sky (RECIPE §2 sky member) — no royal blue; black is the only strong accent
   royalSoft: "#5B54C7", // indigo/periwinkle — lavender chip icon, line tone
   violet: "#6C63C9", // lavender-violet icon tone (agents/AI), legible on white
   green: "#2E9E5B", // positive — deltas, health, money-in; mint chip icon

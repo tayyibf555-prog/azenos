@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDictation } from "../../lib/useDictation";
-import { COLORS, tint } from "../ui";
+import { TINTS } from "../system/tokens";
 import { deriveAskContext } from "./context";
 import { DictationMic } from "./DictationMic";
 import { MessageList } from "./MessageList";
@@ -221,9 +221,8 @@ export function CommandPalette() {
             style={{
               padding: "10px 14px",
               fontSize: 12.5,
-              color: "var(--amber)",
-              background: tint(COLORS.amber, 0.07),
-              borderBottom: "1px solid var(--border)",
+              color: TINTS.butter.fg,
+              background: TINTS.butter.bg,
             }}
           >
             Ask needs ANTHROPIC_API_KEY — set it in .env

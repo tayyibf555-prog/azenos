@@ -85,56 +85,40 @@ function lag(hours: number | null): string {
 function ConversionTable({ rows }: { rows: FunnelStageDetail[] }) {
   return (
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table
-        style={{
-          width: "100%",
-          minWidth: 520,
-          borderCollapse: "collapse",
-          fontSize: 12.5,
-        }}
-      >
+      {/* RECIPE — the sanctioned .table class (globals.css): row separation is
+          hover-highlight only, never a hairline divider. */}
+      <table className="table" style={{ minWidth: 520 }}>
         <thead>
-          <tr className="faint" style={{ textAlign: "right" }}>
-            <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 550 }}>
-              Stage
-            </th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>Count</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>From prev</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>Of leads</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>Drop-off</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>Avg lag</th>
+          <tr style={{ textAlign: "right" }}>
+            <th style={{ textAlign: "left" }}>Stage</th>
+            <th>Count</th>
+            <th>From prev</th>
+            <th>Of leads</th>
+            <th>Drop-off</th>
+            <th>Avg lag</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr
-              key={row.key}
-              style={{ borderTop: "1px solid var(--border)", textAlign: "right" }}
-            >
-              <td
-                style={{
-                  textAlign: "left",
-                  padding: "8px",
-                  fontWeight: 540,
-                }}
-              >
+            <tr key={row.key} style={{ textAlign: "right" }}>
+              <td style={{ textAlign: "left", fontWeight: 540 }}>
                 {row.label}
               </td>
-              <td className="tnum" style={{ padding: "8px" }}>
+              <td className="tnum">
                 {row.count.toLocaleString("en-GB")}
               </td>
-              <td className="tnum muted" style={{ padding: "8px" }}>
+              <td className="tnum muted">
                 {pct(row.fromPrevPct)}
               </td>
-              <td className="tnum muted" style={{ padding: "8px" }}>
+              <td className="tnum muted">
                 {pct(row.fromTopPct)}
               </td>
-              <td className="tnum faint" style={{ padding: "8px" }}>
+              <td className="tnum faint">
                 {row.dropFromPrev > 0
                   ? `-${row.dropFromPrev.toLocaleString("en-GB")}`
                   : "—"}
               </td>
-              <td className="tnum faint" style={{ padding: "8px" }}>
+              <td className="tnum faint">
                 {lag(row.avgLagHoursFromPrev)}
               </td>
             </tr>
@@ -292,28 +276,30 @@ function StagePercentileTable({ rows }: { rows: FunnelStagePercentile[] }) {
   }
   return (
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table style={{ width: "100%", minWidth: 420, borderCollapse: "collapse", fontSize: 12.5 }}>
+      {/* RECIPE — the sanctioned .table class (globals.css): row separation is
+          hover-highlight only, never a hairline divider. */}
+      <table className="table" style={{ minWidth: 420 }}>
         <thead>
-          <tr className="faint" style={{ textAlign: "right" }}>
-            <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 550 }}>Stage gap</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>Matched</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>p50</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>p90</th>
+          <tr style={{ textAlign: "right" }}>
+            <th style={{ textAlign: "left" }}>Stage gap</th>
+            <th>Matched</th>
+            <th>p50</th>
+            <th>p90</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.key} style={{ borderTop: "1px solid var(--border)", textAlign: "right" }}>
-              <td style={{ textAlign: "left", padding: "8px", fontWeight: 540 }}>
+            <tr key={row.key} style={{ textAlign: "right" }}>
+              <td style={{ textAlign: "left", fontWeight: 540 }}>
                 {row.fromLabel} → {row.toLabel}
               </td>
-              <td className="tnum muted" style={{ padding: "8px" }}>
+              <td className="tnum muted">
                 {row.sampleSize.toLocaleString("en-GB")}
               </td>
-              <td className="tnum" style={{ padding: "8px" }}>
+              <td className="tnum">
                 {lag(row.p50Hours)}
               </td>
-              <td className="tnum" style={{ padding: "8px" }}>
+              <td className="tnum">
                 {lag(row.p90Hours)}
               </td>
             </tr>

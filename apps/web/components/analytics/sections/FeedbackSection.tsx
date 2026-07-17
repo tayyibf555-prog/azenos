@@ -3,13 +3,15 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { relativeTime } from "../../../lib/format";
-import { COLORS, humanize, tint } from "../../ui";
+import { COLORS, humanize } from "../../ui";
 import type { AnalyticsRange, FeedbackResponse, LabelledValue } from "../types";
 import { Donut, HBars, Leaderboard, LineChart, topSegments } from "../charts";
 import type { ChartPoint, DonutSegment } from "../charts";
 import { StatGrid } from "../StatGrid";
 import { StatTile } from "../StatTile";
 import { ExpandableChart } from "../ExpandableChart";
+import { Pill } from "../../system/Pill";
+import type { SquircleTone } from "../../system/tokens";
 import { ComingOnline, SectionFrame, SectionSkeleton, useSectionData } from "./_shell";
 
 /**
@@ -62,6 +64,7 @@ const RANGE_LABEL: Record<AnalyticsRange, string> = {
   "90d": "last 90 days",
 };
 
+/** Raw chart-mark colours — HBars/Donut segments and the StatTile hero tone. */
 const KIND_COLOR: Record<FeedbackKind, string> = {
   bug: COLORS.red,
   feature: COLORS.blue,
@@ -70,11 +73,27 @@ const KIND_COLOR: Record<FeedbackKind, string> = {
   other: COLORS.grey,
 };
 
+/** RECIPE §2 tones (not raw hexes) — kind renders as a sanctioned pastel pill. */
+const KIND_TONE: Record<FeedbackKind, SquircleTone> = {
+  bug: "rose",
+  feature: "sky",
+  question: "butter",
+  praise: "mint",
+  other: "graphite",
+};
+
 const SEVERITY_COLOR: Record<string, string> = {
   Minor: COLORS.grey,
   Annoying: COLORS.amber,
   Blocking: COLORS.red,
   Unspecified: COLORS.grey,
+};
+
+const SEVERITY_TONE: Record<string, SquircleTone> = {
+  Minor: "graphite",
+  Annoying: "peach",
+  Blocking: "rose",
+  Unspecified: "graphite",
 };
 
 const STATUS_LABEL: Record<FeedbackItemStatus, string> = {
@@ -91,6 +110,15 @@ const STATUS_COLOR: Record<FeedbackItemStatus, string> = {
   done: COLORS.green,
 };
 
+/** RECIPE §2 tones — the triage flow reads sky (new) → butter (seen, waiting)
+ * → peach (planned, in progress) → mint (done). */
+const STATUS_TONE: Record<FeedbackItemStatus, SquircleTone> = {
+  new: "sky",
+  seen: "butter",
+  planned: "peach",
+  done: "mint",
+};
+
 const STATUS_FLOW: FeedbackItemStatus[] = ["new", "seen", "planned", "done"];
 
 const nf = (n: number): string => n.toLocaleString("en-GB");
@@ -103,26 +131,17 @@ function severityLabel(severity: number | null): string {
 }
 
 function Chip({
-  color,
+  tone,
   children,
   title,
 }: {
-  color: string;
+  tone: SquircleTone;
   children: ReactNode;
   title?: string;
 }) {
   return (
-    <span
-      className="badge"
-      title={title}
-      style={{
-        color,
-        background: tint(color, 0.13),
-        borderColor: tint(color, 0.28),
-        fontSize: 10.5,
-      }}
-    >
-      {children}
+    <span title={title}>
+      <Pill tone={tone}>{children}</Pill>
     </span>
   );
 }
@@ -434,9 +453,9 @@ function BoardColumn({
               style={{ padding: 10, display: "grid", gap: 6, background: "var(--card-2)" }}
             >
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                <Chip color={KIND_COLOR[it.kind]}>{humanize(it.kind)}</Chip>
+                <Chip tone={KIND_TONE[it.kind]}>{humanize(it.kind)}</Chip>
                 {it.severity !== null && (
-                  <Chip color={SEVERITY_COLOR[severityLabel(it.severity)] ?? COLORS.grey}>
+                  <Chip tone={SEVERITY_TONE[severityLabel(it.severity)] ?? "graphite"}>
                     {severityLabel(it.severity)}
                   </Chip>
                 )}
@@ -491,9 +510,9 @@ function RecentRow({ item }: { item: FeedbackBoardItem }) {
       }}
       title={item.message}
     >
-      <Chip color={KIND_COLOR[item.kind]}>{humanize(item.kind)}</Chip>
+      <Chip tone={KIND_TONE[item.kind]}>{humanize(item.kind)}</Chip>
       {item.severity !== null && (
-        <Chip color={SEVERITY_COLOR[severityLabel(item.severity)] ?? COLORS.grey}>
+        <Chip tone={SEVERITY_TONE[severityLabel(item.severity)] ?? "graphite"}>
           {severityLabel(item.severity)}
         </Chip>
       )}
@@ -513,7 +532,7 @@ function RecentRow({ item }: { item: FeedbackBoardItem }) {
           {item.pageUrl.replace(/^https?:\/\//, "")}
         </span>
       )}
-      <Chip color={STATUS_COLOR[item.status]}>{STATUS_LABEL[item.status]}</Chip>
+      <Chip tone={STATUS_TONE[item.status]}>{STATUS_LABEL[item.status]}</Chip>
       <span className="faint tnum" style={{ fontSize: 11, flex: "none", width: 64, textAlign: "right" }}>
         {relativeTime(item.createdAt)}
       </span>

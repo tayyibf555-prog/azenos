@@ -11,7 +11,7 @@ import {
   type ProposalsResponse,
   type ApiErrorShape,
 } from "../../components/growth-types";
-import { COLORS, tint } from "../../components/ui";
+import { TINTS } from "../../components/system/tokens";
 import { PipelineBoard } from "./PipelineBoard";
 import { ProposalsBoard } from "./ProposalsBoard";
 
@@ -270,11 +270,10 @@ export function GrowthWorkspace({
           role="status"
           style={{
             padding: "10px 14px",
-            borderRadius: "var(--radius-sm)",
+            borderRadius: "var(--radius-tile)",
             fontSize: 12.5,
-            color: "var(--amber)",
-            background: tint(COLORS.amber, 0.1),
-            border: `1px solid ${tint(COLORS.amber, 0.24)}`,
+            color: TINTS.butter.fg,
+            background: TINTS.butter.bg,
           }}
         >
           {notice}

@@ -95,7 +95,7 @@ export function ComingOnline({ note }: { note: string }) {
         padding: 24,
         display: "grid",
         gap: 6,
-        borderStyle: "dashed",
+        border: "1px dashed var(--border-2)",
         placeItems: "center",
         textAlign: "center",
       }}

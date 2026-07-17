@@ -17,7 +17,6 @@ import { ProjectHealthTable } from "../components/ProjectHealthTable";
 import { OpenAnomaliesStat } from "../components/OpenAnomaliesStat";
 import { HealthAlertsCard } from "../components/HealthAlertsCard";
 import {
-  CountdownPill,
   DataCard,
   EmptyState,
   EventChip,
@@ -191,6 +190,20 @@ const CONFIDENCE_TONE: Record<string, SquircleTone> = {
   low: "graphite",
 };
 
+/**
+ * RECIPE §2 (Clay rule): cycle a different pastel tint per adjacent tinted card
+ * so no two neighbouring upcoming-call cards repeat — the reference's
+ * multi-coloured event stack. Purely presentational.
+ */
+const CALL_TONES: SquircleTone[] = [
+  "mint",
+  "sky",
+  "lavender",
+  "butter",
+  "peach",
+  "rose",
+];
+
 const londonHM = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/London",
   hour: "2-digit",
@@ -233,8 +246,8 @@ export default async function CommandCenter() {
           className="card"
           style={{
             padding: 20,
-            borderColor: "rgba(212,82,74,0.3)",
-            background: "rgba(212,82,74,0.06)",
+            border: "1px solid rgba(168,52,100,0.3)",
+            background: "rgba(168,52,100,0.06)",
           }}
         >
           <strong>Database not reachable.</strong>
@@ -256,7 +269,7 @@ export default async function CommandCenter() {
             {/* §5 one compact stat strip */}
             <StatRow>
               <StatCell
-                label="Monthly recurring revenue"
+                label="MRR"
                 value={formatPence(overview.mrrPence)}
                 hero
               />
@@ -273,7 +286,7 @@ export default async function CommandCenter() {
                 value={overview.eventsTotal.toLocaleString("en-GB")}
               />
               <StatCell
-                label="Appointments this month"
+                label="Appointments (month)"
                 value={overview.clientBookingsThisMonth.toLocaleString("en-GB")}
               />
               <OpenAnomaliesStat />
@@ -351,15 +364,15 @@ export default async function CommandCenter() {
 
                 <DataCard title="Upcoming calls" icon="phone" tone="mint">
                   {today && today.calls.length > 0 ? (
-                    <div style={{ display: "grid", gap: 2 }}>
-                      {today.calls.map((c) => (
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {today.calls.map((c, i) => (
                         <EventChip
                           key={c.id}
                           icon="phone"
-                          tone="mint"
+                          tone={CALL_TONES[i % CALL_TONES.length]}
                           title={c.inviteeName ?? humanize(c.kind)}
                           time={`${humanize(c.kind)} · ${hm(c.startsAt)}`}
-                          meta={<CountdownPill target={c.startsAt} />}
+                          countdownTarget={c.startsAt}
                         />
                       ))}
                     </div>

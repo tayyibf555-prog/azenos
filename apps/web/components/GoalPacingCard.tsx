@@ -58,7 +58,7 @@ export function GoalPacingCard({ projectId }: { projectId: string }) {
   if (state.status === "loading") {
     return (
       <section className="card" style={{ padding: 0 }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>Goal pacing</h3>
         </div>
         <div style={{ padding: 18, display: "grid", gap: 8 }}>
@@ -71,7 +71,7 @@ export function GoalPacingCard({ projectId }: { projectId: string }) {
   if (state.status === "error") {
     return (
       <section className="card" style={{ padding: 0 }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>Goal pacing</h3>
         </div>
         <div className="empty" style={{ padding: "30px 24px" }}>
@@ -86,7 +86,7 @@ export function GoalPacingCard({ projectId }: { projectId: string }) {
   if (goals.length === 0) {
     return (
       <section className="card" style={{ padding: 0 }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>Goal pacing</h3>
         </div>
         <div className="empty" style={{ padding: "30px 24px" }}>
@@ -101,7 +101,7 @@ export function GoalPacingCard({ projectId }: { projectId: string }) {
 
   return (
     <section className="card" style={{ padding: 0 }}>
-      <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ padding: "14px 18px 4px" }}>
         <h3 style={{ fontSize: 14 }}>Goal pacing</h3>
       </div>
       <div style={{ padding: 14 }}>

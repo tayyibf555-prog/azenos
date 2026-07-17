@@ -5,11 +5,13 @@ import type { ReactNode } from "react";
 import { formatDelta, formatMetricValue } from "../../charts/util";
 import { formatLondonTime, formatPence, relativeTime } from "../../../lib/format";
 import type { GoodDirection, MetricAggregation, MetricUnit } from "../../metrics-types";
-import { COLORS, eventCategory, tint } from "../../ui";
+import { COLORS, eventCategory } from "../../ui";
 import type { AnalyticsRange, CustomResponse } from "../types";
 import { HBars } from "../charts";
 import { StatGrid } from "../StatGrid";
 import { StatTile } from "../StatTile";
+import { Pill } from "../../system/Pill";
+import { eventTone } from "../../system/tokens";
 import { ComingOnline, SectionFrame, SectionSkeleton, useSectionData } from "./_shell";
 
 /**
@@ -200,18 +202,8 @@ function MetricCard({ metric, rangeLabel }: { metric: CustomMetricData; rangeLab
         <>
           {metric.name}
           {metric.isCustom && (
-            <span
-              className="badge"
-              style={{
-                marginLeft: 7,
-                color: COLORS.teal,
-                background: tint(COLORS.teal, 0.13),
-                borderColor: tint(COLORS.teal, 0.28),
-                fontSize: 10,
-                padding: "1px 6px",
-              }}
-            >
-              custom
+            <span style={{ marginLeft: 7, display: "inline-block" }}>
+              <Pill tone="sky">custom</Pill>
             </span>
           )}
         </>
@@ -229,19 +221,10 @@ function MetricCard({ metric, rangeLabel }: { metric: CustomMetricData; rangeLab
 // ── recent-events table (bespoke, matches the AgentDevSection DataTable pattern) ──
 
 function EventTypeBadge({ type }: { type: string }) {
-  const { label, color } = eventCategory(type);
+  const { label } = eventCategory(type);
   return (
-    <span
-      className="badge"
-      style={{
-        color,
-        background: tint(color, 0.13),
-        borderColor: tint(color, 0.28),
-        fontSize: 11,
-      }}
-      title={label}
-    >
-      {type}
+    <span title={label}>
+      <Pill tone={eventTone(type)}>{type}</Pill>
     </span>
   );
 }
@@ -256,18 +239,16 @@ function RecentEventsTable({ rows }: { rows: RawEventRow[] }) {
   }
   return (
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontSize: 12.5 }}>
+      {/* RECIPE — the sanctioned .table class (globals.css): row separation is
+          hover-highlight only, never a hairline divider. */}
+      <table className="table" style={{ minWidth: 640 }}>
         <thead>
           <tr>
             {["Time", "Type", "Actor", "Subject", "Value"].map((h, i) => (
               <th
                 key={h}
-                className="faint"
                 style={{
                   textAlign: i === 0 ? "left" : i === 4 ? "right" : "left",
-                  fontWeight: 550,
-                  fontSize: 11,
-                  padding: "0 10px 8px",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -280,14 +261,14 @@ function RecentEventsTable({ rows }: { rows: RawEventRow[] }) {
           {rows.map((row) => {
             const role = ROLE_LABEL[row.actorKind ?? "unknown"] ?? ROLE_LABEL.unknown!;
             return (
-              <tr key={row.id} style={{ borderTop: "1px solid var(--border)" }}>
-                <td className="tnum faint" style={{ padding: "9px 10px", whiteSpace: "nowrap" }} title={formatLondonTime(row.occurredAt)}>
+              <tr key={row.id}>
+                <td className="tnum faint" style={{ whiteSpace: "nowrap" }} title={formatLondonTime(row.occurredAt)}>
                   {relativeTime(row.occurredAt)}
                 </td>
-                <td style={{ padding: "9px 10px", whiteSpace: "nowrap" }}>
+                <td style={{ whiteSpace: "nowrap" }}>
                   <EventTypeBadge type={row.type} />
                 </td>
-                <td style={{ padding: "9px 10px", whiteSpace: "nowrap" }}>
+                <td style={{ whiteSpace: "nowrap" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <span style={{ width: 7, height: 7, borderRadius: "50%", background: role.color, flex: "none" }} />
                     <span className="muted">{role.label}</span>
@@ -298,10 +279,10 @@ function RecentEventsTable({ rows }: { rows: RawEventRow[] }) {
                     )}
                   </span>
                 </td>
-                <td className="faint tnum" style={{ padding: "9px 10px", whiteSpace: "nowrap" }}>
+                <td className="faint tnum" style={{ whiteSpace: "nowrap" }}>
                   {row.subjectId ?? "—"}
                 </td>
-                <td className="tnum" style={{ padding: "9px 10px", whiteSpace: "nowrap", textAlign: "right" }}>
+                <td className="tnum" style={{ whiteSpace: "nowrap", textAlign: "right" }}>
                   {row.valuePence !== null ? formatPence(row.valuePence) : "—"}
                 </td>
               </tr>
@@ -411,7 +392,7 @@ function CustomBody({ data, range }: { data: CustomData; range: AnalyticsRange }
           {availableTypes.length > 0 && (
             <div
               className="card"
-              style={{ display: "inline-flex", flexWrap: "wrap", padding: 3, gap: 2, borderRadius: 10, width: "fit-content" }}
+              style={{ display: "inline-flex", flexWrap: "wrap", padding: 3, gap: 2, borderRadius: "var(--radius-pill)", width: "fit-content" }}
               role="group"
               aria-label="Filter by event type"
             >

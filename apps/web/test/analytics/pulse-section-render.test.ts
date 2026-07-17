@@ -38,7 +38,7 @@ const DATA: PulseData = {
   ],
   mix: [
     { label: "money", color: "#2e9e5b", value: 300 },
-    { label: "leads", color: "#3457d5", value: 200 },
+    { label: "leads", color: "#255e9e", value: 200 },
     { label: "agents", color: "#7c8db0", value: 100 },
   ],
   typeMix: [{ type: "payment.captured", count: 300 }],

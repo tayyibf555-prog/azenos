@@ -4,8 +4,8 @@ import { openAskPalette } from "../ask/paletteEvents";
 import { SysIcon } from "./icons";
 
 /**
- * §2 topbar right cluster — 32px circular icon buttons (search opens the ⌘K
- * palette; notifications carry a 6px royal dot when relevant) + the Live/env
+ * §2 topbar right cluster — circular icon buttons (search opens the ⌘K palette;
+ * notifications carry a deep-hue attention dot when relevant) + the Live/env
  * chip. Client because search wires into the palette. Presentational otherwise.
  */
 export function TopbarActions({ notify = false }: { notify?: boolean }) {
@@ -33,10 +33,10 @@ export function TopbarActions({ notify = false }: { notify?: boolean }) {
               position: "absolute",
               top: 6,
               right: 6,
-              width: 6,
-              height: 6,
+              width: 8,
+              height: 8,
               borderRadius: "50%",
-              background: "var(--accent)",
+              background: "#A83464",
             }}
           />
         ) : null}
@@ -52,8 +52,8 @@ export function TopbarActions({ notify = false }: { notify?: boolean }) {
           fontSize: 12,
           fontWeight: 560,
           color: "var(--text-2)",
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
+          background: "var(--bg-well)",
+          border: "none",
         }}
       >
         <span

@@ -3,19 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatPence, formatLondonDate } from "../../lib/format";
-import { COLORS, tint } from "../ui";
+import { Pill, type SquircleTone } from "../system";
 import {
   EXPENSE_CATEGORIES,
   type ExpenseRow,
   type ProjectOption,
 } from "../money-types";
 
-const CATEGORY_COLOR: Record<string, string> = {
-  hosting: COLORS.teal,
-  api: COLORS.magenta,
-  tools: COLORS.blue,
-  contractor: COLORS.amber,
-  other: COLORS.grey,
+const CATEGORY_TONE: Record<string, SquircleTone> = {
+  hosting: "sky",
+  api: "lavender",
+  tools: "graphite",
+  contractor: "butter",
+  other: "graphite",
 };
 
 /** Expenses list + add form (§Money screen). POSTs /api/money/expenses. */
@@ -96,8 +96,8 @@ export function ExpensesPanel({
             gap: 8,
             marginBottom: 14,
             padding: 12,
-            background: "var(--card-2)",
-            borderRadius: 8,
+            background: "var(--bg-well)",
+            borderRadius: "var(--radius-tile)",
           }}
         >
           <label className="label">
@@ -172,15 +172,7 @@ export function ExpensesPanel({
                     )}
                   </td>
                   <td>
-                    <span
-                      className="badge"
-                      style={{
-                        color: CATEGORY_COLOR[e.category] ?? COLORS.grey,
-                        background: tint(CATEGORY_COLOR[e.category] ?? COLORS.grey, 0.12),
-                      }}
-                    >
-                      {e.category}
-                    </span>
+                    <Pill tone={CATEGORY_TONE[e.category] ?? "graphite"}>{e.category}</Pill>
                   </td>
                   <td className="faint">{e.projectId ? "Project" : "Agency"}</td>
                   <td className="tnum" style={{ textAlign: "right" }}>{formatPence(e.amountPence)}</td>

@@ -3,7 +3,9 @@
 import type { ReactNode } from "react";
 import { formatLondonTime, relativeTime } from "../../../lib/format";
 import type { GoalPacingResult } from "../../../lib/server/pacing";
-import { COLORS, healthColor, humanize, tint } from "../../ui";
+import { COLORS, humanize } from "../../ui";
+import { Pill } from "../../system/Pill";
+import { healthTone, type SquircleTone } from "../../system/tokens";
 import type { AnalyticsRange, PulseResponse } from "../types";
 import {
   BigStat,
@@ -70,38 +72,18 @@ export interface PulseData extends PulseResponse {
   forecast?: { points: BandPoint[] } | null;
 }
 
+/**
+ * RECIPE §3 tone (not a raw hex) — liveness renders as a sanctioned pastel
+ * pill (system Pill) instead of a hand-rolled tint() wash.
+ */
 const LIVENESS: Record<
   PulseData["liveness"]["status"],
-  { label: string; color: string }
+  { label: string; tone: SquircleTone }
 > = {
-  up: { label: "Live", color: COLORS.green },
-  degraded: { label: "Degraded", color: COLORS.amber },
-  down: { label: "Silent", color: COLORS.red },
+  up: { label: "Live", tone: "mint" },
+  degraded: { label: "Degraded", tone: "butter" },
+  down: { label: "Silent", tone: "rose" },
 };
-
-function Pill({ color, children }: { color: string; children: ReactNode }) {
-  return (
-    <span
-      className="badge"
-      style={{
-        color,
-        background: tint(color, 0.13),
-        borderColor: tint(color, 0.28),
-      }}
-    >
-      <span
-        style={{
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          background: color,
-          flex: "none",
-        }}
-      />
-      {children}
-    </span>
-  );
-}
 
 const PACING_PERIOD_LABEL: Record<GoalPacingResult["period"], string> = {
   day: "today",
@@ -190,7 +172,6 @@ export function PulseSection({
 
 export function PulseBody({ data, range }: { data: PulseData; range: AnalyticsRange }) {
   const live = LIVENESS[data.liveness.status];
-  const hColor = healthColor(data.health);
   const rangeLabel = RANGE_LABEL[range];
   const lastEvent = data.liveness.lastEventAt;
 
@@ -219,8 +200,8 @@ export function PulseBody({ data, range }: { data: PulseData; range: AnalyticsRa
         />
         <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <Pill color={live.color}>{live.label}</Pill>
-            <Pill color={hColor}>{humanize(data.health)} health</Pill>
+            <Pill tone={live.tone}>{live.label}</Pill>
+            <Pill tone={healthTone(data.health)}>{humanize(data.health)} health</Pill>
           </div>
           <span className="faint tnum" style={{ fontSize: 11.5, textAlign: "right" }}>
             {lastEvent

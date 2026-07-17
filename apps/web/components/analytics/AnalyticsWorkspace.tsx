@@ -240,7 +240,7 @@ function RangeControl({
   return (
     <div
       className="card"
-      style={{ display: "inline-flex", padding: 3, gap: 2, borderRadius: 10 }}
+      style={{ display: "inline-flex", padding: 3, gap: 2, borderRadius: "var(--radius-pill)" }}
       role="group"
       aria-label="Date range"
     >

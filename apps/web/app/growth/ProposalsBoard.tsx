@@ -2,7 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { COLORS, tint } from "../../components/ui";
+import { Pill } from "../../components/system/Pill";
+import { TINTS, type SquircleTone } from "../../components/system/tokens";
 import {
   formatPence,
   formatLondonDate,
@@ -19,12 +20,13 @@ import {
   WIZARD_PREFILL_STORAGE_KEY,
 } from "../../lib/growth/proposalPrefill";
 
-const STATUS_COLOR: Record<string, string> = {
-  draft: COLORS.grey,
-  ready: COLORS.blue,
-  sent: COLORS.violet,
-  won: COLORS.green,
-  lost: COLORS.red,
+/** RECIPE §3: proposal lifecycle reads as a tinted pill per column, not a hex badge. */
+const STATUS_TONE: Record<string, SquircleTone> = {
+  draft: "graphite",
+  ready: "sky",
+  sent: "lavender",
+  won: "mint",
+  lost: "rose",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -101,7 +103,11 @@ export function ProposalsBoard({
   return (
     <section className="card" style={{ padding: 0 }}>
       <div
-        style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}
+        style={{
+          padding: "14px 18px",
+          borderRadius: "var(--radius-card) var(--radius-card) 0 0",
+          background: "var(--bg-well)",
+        }}
       >
         <h3 style={{ fontSize: 14, fontWeight: 620 }}>
           Proposals{" "}
@@ -130,7 +136,7 @@ export function ProposalsBoard({
         >
           {PROPOSAL_STATUSES.map((status) => {
             const col = items.filter((p) => p.status === status);
-            const tone = STATUS_COLOR[status]!;
+            const tone = STATUS_TONE[status]!;
             return (
               <div key={status} style={{ display: "grid", gap: 8, alignContent: "start" }}>
                 <div
@@ -147,7 +153,7 @@ export function ProposalsBoard({
                 >
                   <span
                     className="dot"
-                    style={{ width: 6, height: 6, background: tone }}
+                    style={{ width: 6, height: 6, background: TINTS[tone].fg }}
                     aria-hidden
                   />
                   {STATUS_LABEL[status]}
@@ -165,7 +171,6 @@ export function ProposalsBoard({
                       display: "grid",
                       gap: 4,
                       cursor: "pointer",
-                      borderColor: tint(tone, 0.3),
                     }}
                   >
                     <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35 }}>
@@ -177,7 +182,7 @@ export function ProposalsBoard({
                     {p.suggestedPricePence !== null && (
                       <span
                         className="mono tnum"
-                        style={{ fontSize: 11.5, color: COLORS.green }}
+                        style={{ fontSize: 11.5, color: "var(--green)" }}
                       >
                         {formatPence(p.suggestedPricePence)}
                       </span>
@@ -228,7 +233,7 @@ function ProposalModal({
   onCreateProject: () => void;
   onClose: () => void;
 }) {
-  const tone = STATUS_COLOR[p.status]!;
+  const tone = STATUS_TONE[p.status]!;
   const advance = nextStatus(p.status);
   // 'ready' → 'sent' isn't a plain status flip: it must mint the share link
   // first (P8-GROWTH2), so that one transition gets its own "Send" action.
@@ -279,7 +284,7 @@ function ProposalModal({
         <div
           style={{
             padding: "16px 20px",
-            borderBottom: "1px solid var(--border)",
+            boxShadow: "0 1px 2px rgba(20, 22, 26, 0.05)",
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
@@ -298,16 +303,7 @@ function ProposalModal({
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none" }}>
-            <span
-              className="badge"
-              style={{
-                color: tone,
-                background: tint(tone, 0.12),
-                borderColor: tint(tone, 0.28),
-              }}
-            >
-              {STATUS_LABEL[p.status]}
-            </span>
+            <Pill tone={tone}>{STATUS_LABEL[p.status]}</Pill>
             <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>
               Close
             </button>
@@ -323,7 +319,7 @@ function ProposalModal({
                 gap: 8,
               }}
             >
-              <span className="tnum" style={{ fontSize: 24, fontWeight: 680, color: COLORS.green }}>
+              <span className="tnum" style={{ fontSize: 24, fontWeight: 680, color: "var(--green)" }}>
                 {formatPence(p.suggestedPricePence)}
               </span>
               <span className="faint" style={{ fontSize: 12 }}>
@@ -343,9 +339,9 @@ function ProposalModal({
                 alignItems: "center",
                 gap: 8,
                 padding: "10px 12px",
-                borderRadius: "var(--radius-sm)",
-                background: tint(COLORS.violet, 0.08),
-                border: `1px solid ${tint(COLORS.violet, 0.24)}`,
+                borderRadius: "var(--radius-tile)",
+                background: TINTS.sky.bg,
+                color: TINTS.sky.fg,
               }}
             >
               <span
@@ -378,11 +374,10 @@ function ProposalModal({
             <div
               style={{
                 padding: "12px 14px",
-                borderRadius: "var(--radius-sm)",
-                background: tint(COLORS.green, 0.08),
-                border: `1px solid ${tint(COLORS.green, 0.24)}`,
+                borderRadius: "var(--radius-tile)",
+                background: TINTS.mint.bg,
                 fontSize: 13,
-                color: "var(--text)",
+                color: TINTS.mint.fg,
               }}
             >
               <span style={{ fontWeight: 620 }}>Expected ROI · </span>
@@ -407,12 +402,14 @@ function ProposalModal({
               </div>
               <div
                 style={{
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  overflow: "hidden",
+                  background: "var(--bg-well)",
+                  borderRadius: "var(--radius-tile)",
+                  padding: 4,
+                  display: "grid",
+                  gap: 1,
                 }}
               >
-                {p.evidenceEvents.map((ev, i) => (
+                {p.evidenceEvents.map((ev) => (
                   <div
                     key={ev.id}
                     style={{
@@ -420,8 +417,7 @@ function ProposalModal({
                       alignItems: "center",
                       justifyContent: "space-between",
                       gap: 12,
-                      padding: "7px 12px",
-                      borderTop: i === 0 ? "none" : "1px solid var(--border)",
+                      padding: "7px 10px",
                     }}
                   >
                     <span className="mono" style={{ fontSize: 11.5 }}>
@@ -440,7 +436,7 @@ function ProposalModal({
         <div
           style={{
             padding: "14px 20px",
-            borderTop: "1px solid var(--border)",
+            boxShadow: "0 -1px 2px rgba(20, 22, 26, 0.05)",
             display: "flex",
             gap: 8,
             flexWrap: "wrap",
@@ -452,14 +448,9 @@ function ProposalModal({
           {advance && advanceIsSend && (
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn btn-sm btn-primary"
               disabled={busy}
               onClick={() => onSend(p.id)}
-              style={{
-                color: "var(--bg)",
-                background: STATUS_COLOR.sent,
-                borderColor: STATUS_COLOR.sent,
-              }}
             >
               Send to client
             </button>
@@ -467,14 +458,9 @@ function ProposalModal({
           {advance && !advanceIsSend && (
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn btn-sm btn-primary"
               disabled={busy}
               onClick={() => onMove(p.id, advance)}
-              style={{
-                color: "var(--bg)",
-                background: STATUS_COLOR[advance],
-                borderColor: STATUS_COLOR[advance],
-              }}
             >
               Move to {STATUS_LABEL[advance]}
             </button>
@@ -493,13 +479,8 @@ function ProposalModal({
           {p.status === "won" && (
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn btn-sm btn-primary"
               onClick={onCreateProject}
-              style={{
-                color: "var(--bg)",
-                background: COLORS.blue,
-                borderColor: COLORS.blue,
-              }}
             >
               Create project →
             </button>

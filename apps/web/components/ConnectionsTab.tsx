@@ -166,7 +166,6 @@ export function ConnectionsTab({ projectId }: { projectId: string }) {
             alignItems: "baseline",
             justifyContent: "space-between",
             padding: "14px 18px",
-            borderBottom: "1px solid var(--border)",
           }}
         >
           <h3 style={{ fontSize: 14 }}>Stored keys</h3>
@@ -320,7 +319,7 @@ function ProviderCard({
         padding: 14,
         display: "grid",
         gap: 8,
-        borderColor: tint(color, 0.28),
+        background: tint(color, 0.055),
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -390,7 +389,6 @@ function CredentialRow({
           style={{
             color,
             background: tint(color, 0.12),
-            borderColor: tint(color, 0.28),
             flex: "none",
           }}
         >

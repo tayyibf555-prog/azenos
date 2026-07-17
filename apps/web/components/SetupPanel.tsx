@@ -331,7 +331,6 @@ export function SetupPanel({
             alignItems: "center",
             justifyContent: "space-between",
             padding: "14px 18px",
-            borderBottom: "1px solid var(--border)",
           }}
         >
           <h3 style={{ fontSize: 14 }}>Delivery log</h3>

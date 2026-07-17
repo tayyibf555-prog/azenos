@@ -5,7 +5,7 @@
  */
 import { eventCategory } from "../ui";
 
-/** §3 signature: pastel-tint background + same-hue darker icon/text. */
+/** Notion tint family — the wash is a WHOLE-container background (RECIPE §2). */
 export type SquircleTone =
   | "lavender"
   | "mint"
@@ -15,15 +15,23 @@ export type SquircleTone =
   | "butter"
   | "graphite";
 
-/** Exact §3 tint/icon-hue pairs — hardcoded washes (NOT computed via tint()). */
-export const TINTS: Record<SquircleTone, { bg: string; fg: string }> = {
-  lavender: { bg: "#ECEBFA", fg: "#5B54C7" }, // AI, agents, LLM
-  mint: { bg: "#DFF3E6", fg: "#1F7A43" }, // success, money-in, bookings, present
-  sky: { bg: "#DDEBF9", fg: "#2B6CB0" }, // messages, views, info, sessions
-  peach: { bg: "#FBEBDD", fg: "#B05C2A" }, // edits, warnings, pending-attention
-  rose: { bg: "#F9E3E1", fg: "#B0433A" }, // errors, absence, failures
-  butter: { bg: "#FBF3D9", fg: "#8A6D1B" }, // scheduled, waiting, invoices
-  graphite: { bg: "#ECECF1", fg: "#3A3A3C" }, // system, misc
+/**
+ * RECIPE §2 pastel container tints. Each row: `bg` = the whole-card wash,
+ * `fg` = the deep-hue text/icon, `pill` = the DEEPER wash for status/countdown
+ * pills sitting inside the tinted card. The white icon holder is always #FFFFFF.
+ * Exact values from the binding table — do NOT recompute via tint().
+ */
+export const TINTS: Record<
+  SquircleTone,
+  { bg: string; fg: string; pill: string }
+> = {
+  lavender: { bg: "#E6E0F5", fg: "#4A3A82", pill: "#D6C9F0" }, // AI / agents / LLM
+  mint: { bg: "#D9F3E1", fg: "#1F7A43", pill: "#C3EBD0" }, // money-in / bookings / success
+  sky: { bg: "#DCECFA", fg: "#255E9E", pill: "#C7DFF5" }, // messages / views / sessions
+  peach: { bg: "#FFE8D4", fg: "#9E5320", pill: "#FBD9BE" }, // edits / pending / attention
+  rose: { bg: "#FDE0EC", fg: "#A83464", pill: "#F9CDDE" }, // errors / churn / failures
+  butter: { bg: "#FEF7D6", fg: "#8A6D1B", pill: "#F7EBB4" }, // scheduled / waiting / invoices
+  graphite: { bg: "#F0EEEC", fg: "#3A3A3C", pill: "#E4E1DE" }, // system / misc (neutral)
 };
 
 /** Ordered palette used to colour avatars deterministically by name. */

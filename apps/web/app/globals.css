@@ -1,72 +1,87 @@
-/* Azen OS — Apple theme v2 "Soft Light" (lead-pinned 2026-07-16, supersedes
-   the v1 dark glass). Owner reference: a light education-dashboard — soft
-   off-white #F2F2F7 canvas, flat WHITE cards with #E5E5EA hairlines and a soft
-   double shadow (no blur on light), BLACK pills for the active selection, royal
-   blue #3457D5 used sparingly for primary actions, green for positives, and
-   pastel-tint chips (lavender/mint/peach/sky/rose/butter) with dark text.
-   Token-driven — every screen lifts from these vars. See
-   docs/design/APPLE-THEME.md. Plain CSS. */
+/* Azen OS — "Soft Consumer Light" (lead-pinned 2026-07-17, supersedes the v2
+   Apple-Soft-Light). Binding source: docs/design/RECIPE.md (74-brand match
+   against the owner's reference). Warm-neutral #F1F2F4 canvas, PURE-white
+   BORDERLESS cards separated by contrast + a whisper double-shadow (Wise /
+   Starbucks T1), ink #14140F as the ONE strong fill, warm-charcoal text ladder
+   (Notion), the six pastel tints washed over WHOLE containers (Notion T4), and
+   a pill-or-large radius commitment (Miro/Figma T2). See docs/design/RECIPE.md
+   §2 for the exact provenance of every value. Plain CSS. */
 
 :root {
-  /* ── canvas: soft off-white, never pure white ─────────────────────────── */
-  --bg: #f2f2f7; /* Apple systemGray6 */
-  --bg-2: #ececf1; /* faintly deeper — section wells, inset fills */
+  /* ── canvas: warm-neutral gray, never pure white (Wise T1) ────────────── */
+  --bg: #f1f2f4; /* reference canvas — warm neutral, NOT cold Apple #F2F2F7 */
+  --bg-2: #eaebee; /* deeper inset wells / section grooves / list zebra */
+  --bg-well: #eaebee; /* RECIPE §2 alias */
   --panel: #ffffff;
 
-  /* ── surfaces — flat white with hairline + soft shadow, NO blur on light ─
-     the --glass* keys are kept (markup references them) but now carry light
-     surface values; there is no translucency/refraction on the light canvas. */
+  /* ── surfaces — PURE white, BORDERLESS; separation = contrast + shadow ───
+     the --glass* keys are kept (markup references them) but carry the new
+     borderless light-surface values. No translucency on the light canvas. */
   --glass: #ffffff;
-  --glass-2: #f7f7fa; /* subtle inset fill — tracks, tooltips, quiet chips */
+  --glass-2: #f1f2f4; /* subtle inset fill — tracks, tooltips, quiet chips */
   --glass-hover: #ffffff; /* hover keeps white; the shadow does the lifting */
-  --glass-border: #e5e5ea; /* Apple hairline */
-  --glass-rim: transparent; /* no lit top edge on light surfaces */
-  --blur: 0px; /* no glass blur on light */
+  --glass-border: #edeceb; /* faint WARM hairline — kept ONLY for genuine
+                              structural dividers (topbar). Cards use none. */
+  --glass-rim: transparent;
+  --blur: 0px;
   --blur-lg: 0px;
 
-  /* soft double shadow (spec §Surface) — the depth cue that replaces blur */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.06), 0 14px 32px rgba(0, 0, 0, 0.07);
-  --shadow-pop: 0 2px 8px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.14);
+  /* Starbucks whisper-double borderless-card shadow (RECIPE §2, softer/wider
+     for dashboard scale) — the depth cue that replaces the hairline. */
+  --shadow-card: 0 0 0.5px rgba(20, 22, 26, 0.06), 0 1px 2px rgba(20, 22, 26, 0.05),
+    0 6px 16px -6px rgba(20, 22, 26, 0.06);
+  --shadow-hover: 0 0 0.5px rgba(20, 22, 26, 0.08), 0 2px 4px rgba(20, 22, 26, 0.06),
+    0 12px 28px -8px rgba(20, 22, 26, 0.1);
+  --shadow-pop: 0 8px 20px -6px rgba(20, 22, 26, 0.1),
+    0 30px 60px -20px rgba(20, 22, 26, 0.22); /* palette / modal */
 
   /* legacy token aliases — existing markup references these names */
   --card: var(--glass);
   --card-2: var(--glass-2);
   --card-hover: var(--glass-hover);
+  --card-border: none; /* T1: cards carry NO hairline */
   --input: #ffffff;
   --border: var(--glass-border);
-  --border-2: #d8d8dd;
-  --border-3: #c7c7cc;
+  --border-2: #e3e2e0;
+  --border-3: #d5d4d1;
 
-  /* ── text: Apple black scale on light ─────────────────────────────────── */
-  --text: #1d1d1f;
-  --text-2: #6e6e73; /* secondary — labels, axis/chart labels */
-  --text-3: #aeaeb2; /* tertiary — quiet captions, placeholders */
+  /* ── text: Notion warm-charcoal ladder (friendlier than cold Apple grays) ─ */
+  --text: #37352f; /* Notion charcoal — primary */
+  --text-2: #6b6a65; /* secondary — labels, axis/chart labels */
+  --text-3: #9b9a94; /* tertiary — quiet captions, placeholders */
 
-  /* ── accent: royal blue primary, sparingly (selection is black's job) ─── */
-  --accent: #3457d5;
-  --accent-2: #5b54c7; /* royal-soft / indigo — line tone, logo gradient end */
-  --accent-deep: #2743b0;
-  --accent-ink: #ffffff; /* white text on royal fills */
-  --cyan: #7c8db0; /* slate (was ice-blue) — quiet highlight on white */
+  /* ── the ONE strong accent: warm near-black ink (Miro/Figma/Uber T3) ──── */
+  --ink: #14140f; /* warm near-black — text + the lone structural fill */
+  --pill-active: #14140f; /* active content tab, selected day, primary CTA */
+  --on-pill: #ffffff;
+  --black-pill: var(--ink); /* alias — existing markup references this name */
+
+  /* ── accent: demoted to a link tone ONLY, never a structural fill ─────── */
+  --accent: #255e9e; /* deep sky (RECIPE §2 sky) — link tone only, never royal blue */
+  --accent-2: #5b54c7; /* royal-soft / indigo — sparkline/line tone */
+  --accent-deep: #1d4a7d;
+  --accent-ink: #ffffff;
+  --cyan: #7c8db0; /* slate — quiet highlight on white */
   --cyan-2: #9aa8c4;
-  --accent-glow: rgba(52, 87, 213, 0.28);
+  --accent-glow: rgba(37, 94, 158, 0.28);
   --cyan-glow: rgba(124, 141, 176, 0.2);
 
-  /* ── black: the reference's selection colour ──────────────────────────── */
-  --black-pill: #111113; /* active nav/tab pills, selected items; white text */
-
   /* ── status: text-grade on white, semantic only ──────────────────────── */
-  --green: #2e9e5b;
-  --amber: #b98a2e;
-  --red: #d4524a;
-  --focus: #3457d5;
+  --green: #1f7a43;
+  --amber: #8a6d1b;
+  --red: #a83464;
+  --focus: #14140f;
 
-  /* ── shape: continuous-corner feel — cards 16 · controls 12 · pills 999 ── */
-  --radius: 16px;
-  --radius-sm: 12px;
-  --radius-lg: 18px;
-  --radius-pill: 999px;
+  /* ── shape: pill-or-large (Miro/Figma T2) — three tiers, skip the middle ─ */
+  --radius-frame: 28px; /* app frame / outer shell */
+  --radius-card: 20px; /* content cards */
+  --radius-tile: 16px; /* nested tiles + tinted event cards */
+  --radius-icon: 12px; /* the WHITE icon-holder square inside a tinted card */
+  --radius-circle: 50%; /* avatars, icon buttons, calendar day cells */
+  --radius-pill: 9999px; /* EVERY interactive control */
+  --radius: var(--radius-card); /* alias — cards, panels, palette */
+  --radius-sm: 12px; /* codeblock / misc small tiles */
+  --radius-lg: 24px;
   --sidebar-w: 232px;
 
   /* ── motion: gentle spring-out, 200–260ms ─────────────────────────────── */
@@ -99,7 +114,6 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "cv01", "ss01";
 }
 
 /* Flat light canvas — no atmospheric glow (light surfaces get their depth
@@ -126,11 +140,11 @@ h4 {
   margin: 0;
   font-family: var(--display);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.012em; /* RECIPE §2: relaxed, friendly tracking */
 }
 h1 {
-  font-weight: 620;
-  letter-spacing: -0.028em;
+  font-weight: 600;
+  letter-spacing: -0.018em;
 }
 
 p {
@@ -149,7 +163,7 @@ pre {
 }
 
 ::selection {
-  background: rgba(52, 87, 213, 0.18);
+  background: rgba(20, 20, 15, 0.12);
 }
 
 /* scrollbars */
@@ -179,7 +193,7 @@ pre {
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 9999px;
 }
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
@@ -202,21 +216,19 @@ pre {
   max-width: 100%;
 }
 
-/* ─── card / white surface ────────────────────────────────────────────── */
+/* ─── card / white surface (T1: borderless — contrast + shadow only) ───── */
 .card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: var(--card-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
 }
 .hoverable {
   transition:
-    border-color 0.2s var(--ease),
     box-shadow 0.2s var(--ease),
     transform 0.2s var(--spring);
 }
 .hoverable:hover {
-  border-color: var(--border-2);
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
 }
@@ -242,8 +254,8 @@ pre {
 /* elevated white surface — modals, popovers, the command palette */
 .glass-strong {
   background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: var(--card-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-pop);
 }
 
@@ -262,10 +274,13 @@ pre {
   left: 0;
   width: var(--sidebar-w);
   background: var(--panel);
-  border-right: 1px solid var(--border);
+  /* RECIPE §3: no right hairline — the gray canvas meeting the white rail is
+     the divider; a whisper shadow carries the separation. */
+  border-right: none;
+  box-shadow: 2px 0 12px -8px rgba(20, 22, 26, 0.06);
   display: flex;
   flex-direction: column;
-  padding: 18px 12px;
+  padding: 18px 14px;
   z-index: 10;
 }
 .app-nav {
@@ -301,6 +316,7 @@ pre {
     padding: 8px 12px;
     border-right: none;
     border-bottom: 1px solid var(--border);
+    box-shadow: none;
     overflow-x: auto;
   }
   .app-nav {
@@ -351,71 +367,66 @@ pre {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
   font-size: 13.5px;
-  font-weight: 550;
+  font-weight: 500;
   color: var(--text-2);
-  border: 1px solid transparent;
+  border: none;
   transition:
     color 0.16s var(--ease),
     background 0.16s var(--ease),
-    border-color 0.16s var(--ease);
+    box-shadow 0.16s var(--ease);
 }
 .nav-item:hover {
   color: var(--text);
-  background: var(--bg); /* soft gray fill #ECECF1-adjacent on white rail */
+  background: var(--bg-well);
 }
-/* the reference's signature: the primary selection is a BLACK pill, white text */
+/* RECIPE §3: the sidebar active row is a softly ELEVATED WHITE pill (Cal.com
+   inset-white-active-segment mechanism) — NOT black. Black is reserved for the
+   calendar selection + content-area tabs/CTAs (T3/T7 split). */
 .nav-item-active,
 .nav-item-active:hover {
-  color: #ffffff;
-  background: var(--black-pill);
-  border-color: transparent;
+  color: var(--text);
+  background: #ffffff;
+  box-shadow: var(--shadow-card);
 }
 
-/* gradient hero number — near-black → royal blue (subtle; the one gradient the
-   spec allows besides nothing else). Green is never in the hero gradient — it
-   marks positives only. */
+/* RECIPE §4 delta 5: no gradients. The hero stat number is solid warm ink. */
 .accent-num {
-  background: linear-gradient(120deg, var(--text), var(--accent));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ink);
 }
 
 /* ─── buttons ─────────────────────────────────────────────────────────── */
+/* RECIPE §3/§4: pill mandate. Secondary rests as a borderless gray-well pill
+   (Uber button-subtle); primary is a flat black pill (no gradients anywhere). */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   height: 36px;
-  padding: 0 15px;
+  padding: 0 16px;
   font-size: 13px;
-  font-weight: 560;
+  font-weight: 500;
   font-family: inherit;
   color: var(--text);
-  background: var(--panel);
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
+  background: var(--bg-well);
+  border: none;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition:
     background 0.18s var(--ease),
-    border-color 0.18s var(--ease),
     box-shadow 0.18s var(--ease),
-    transform 0.15s var(--spring),
+    transform 0.12s var(--spring),
     opacity 0.15s ease;
   white-space: nowrap;
 }
 .btn:hover {
-  background: var(--bg);
-  border-color: var(--border-3);
-  box-shadow: var(--shadow-card);
-  transform: translateY(-1px);
+  background: #e2e3e6;
 }
 .btn:active {
-  transform: translateY(0);
+  transform: scale(0.97);
 }
 .btn:disabled {
   opacity: 0.4;
@@ -423,38 +434,26 @@ pre {
   transform: none;
 }
 .btn-primary {
-  color: var(--accent-ink);
-  font-weight: 620;
-  background: linear-gradient(180deg, #3d61e0, var(--accent));
-  border: 1px solid transparent;
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-    0 1px 2px rgba(52, 87, 213, 0.28),
-    0 8px 20px -8px var(--accent-glow);
+  color: var(--on-pill);
+  font-weight: 560;
+  background: var(--pill-active);
 }
 .btn-primary:hover {
-  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
-  border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
-    0 2px 4px rgba(52, 87, 213, 0.3),
-    0 12px 26px -8px var(--accent-glow);
+  background: #262620;
+  box-shadow: var(--shadow-card);
 }
 .btn-danger {
-  color: var(--accent-ink);
-  background: linear-gradient(180deg, #dc5f57, var(--red));
-  border-color: transparent;
+  color: var(--on-pill);
+  background: var(--red);
 }
 .btn-danger:hover {
-  background: linear-gradient(180deg, var(--red), #b23f39);
+  background: #8f2954;
 }
 .btn-ghost {
   background: transparent;
-  border-color: transparent;
 }
 .btn-ghost:hover {
-  background: var(--bg);
-  border-color: var(--border);
+  background: var(--bg-well);
   box-shadow: none;
 }
 .btn-sm {
@@ -465,20 +464,21 @@ pre {
 }
 
 /* ─── inputs ──────────────────────────────────────────────────────────── */
+/* RECIPE §4 delta 8: borderless gray-well fill, tile radius; focus adds a soft
+   ring, not a hairline. */
 .input,
 select.input,
 textarea.input {
   width: 100%;
   height: 38px;
-  padding: 0 12px;
+  padding: 0 13px;
   font-size: 13.5px;
   font-family: inherit;
   color: var(--text);
-  background: var(--input);
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
+  background: var(--bg-well);
+  border: none;
+  border-radius: var(--radius-tile);
   transition:
-    border-color 0.18s var(--ease),
     box-shadow 0.18s var(--ease),
     background 0.18s var(--ease);
 }
@@ -488,9 +488,8 @@ textarea.input {
 .input:focus,
 select.input:focus,
 textarea.input:focus {
-  border-color: var(--accent);
   background: var(--panel);
-  box-shadow: 0 0 0 3px rgba(52, 87, 213, 0.16);
+  box-shadow: 0 0 0 3px rgba(20, 20, 15, 0.08);
   outline: none;
 }
 textarea.input {
@@ -504,7 +503,7 @@ select.input {
   appearance: none;
   padding-right: 30px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6E73' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6A65' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
@@ -530,16 +529,11 @@ select.input {
   letter-spacing: 0.05em;
   color: var(--text-3);
   padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .table td {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
   vertical-align: middle;
-}
-.table tbody tr:last-child td {
-  border-bottom: none;
 }
 .table tbody tr {
   transition: background 0.14s var(--ease);
@@ -554,12 +548,12 @@ select.input {
   align-items: center;
   gap: 6px;
   height: 22px;
-  padding: 0 9px;
+  padding: 0 10px;
   font-size: 11.5px;
-  font-weight: 560;
+  font-weight: 500;
   line-height: 1;
-  border-radius: 8px;
-  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  border: none;
   white-space: nowrap;
 }
 .badge-mono {
@@ -572,15 +566,15 @@ select.input {
   align-items: center;
   gap: 5px;
   height: 20px;
-  padding: 0 8px;
+  padding: 0 9px;
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
   color: var(--text-2);
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--bg-well);
+  border: none;
 }
 .dot {
   display: inline-block;
@@ -593,34 +587,34 @@ select.input {
 /* ─── tabs ────────────────────────────────────────────────────────────── */
 /* the reference is pill-heavy: active tabs are BLACK pills, matching the nav
    rail's primary selection — not an underline. */
+/* Content-area tabs: black active pill (the T3/T7 split — black lives in the
+   content chrome, white pill lives in the sidebar). */
 .tab {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 14px;
   font-size: 13px;
-  font-weight: 560;
+  font-weight: 500;
   font-family: inherit;
   color: var(--text-2);
   background: none;
-  border: 1px solid transparent;
-  border-radius: 10px;
+  border: none;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition:
     color 0.18s var(--ease),
-    background 0.18s var(--ease),
-    border-color 0.18s var(--ease);
+    background 0.18s var(--ease);
 }
 .tab:hover {
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-well);
 }
 .tab-active,
 .tab-active:hover {
-  color: #ffffff;
-  background: var(--black-pill);
-  border-color: transparent;
+  color: var(--on-pill);
+  background: var(--pill-active);
 }
 .tab-disabled,
 .tab-disabled:hover {
@@ -634,9 +628,9 @@ select.input {
   font-family: var(--mono);
   font-size: 11px;
   padding: 2px 6px;
-  border-radius: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-well);
+  border: none;
   color: var(--text-2);
 }
 @media (max-height: 700px) {
@@ -651,9 +645,9 @@ select.input {
   white-space: pre;
   overflow-x: auto;
   color: var(--text);
-  background: var(--glass-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  background: var(--bg-well);
+  border: none;
+  border-radius: var(--radius-tile);
   padding: 12px 14px;
   margin: 0;
 }
@@ -807,8 +801,8 @@ select.input {
   display: flex;
   flex-direction: column;
   background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: var(--card-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-pop);
   overflow: hidden;
   animation: askPanelIn 0.18s var(--ease) both;
@@ -862,7 +856,7 @@ select.input {
   gap: 16px;
   padding: 0 32px;
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border); /* the one genuine structural divider */
 }
 /* counteract .app-main's padding (desktop 28/32, mobile 20/16) so the bar is
    flush to the top + sides of the main column */
@@ -901,25 +895,24 @@ a.sys-crumb:hover {
 
 /* ── §2 topbar icon buttons ──────────────────────────────────────────────── */
 .sys-iconbtn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: var(--panel);
-  border: 1px solid var(--border);
+  border: none;
+  box-shadow: var(--shadow-card);
   color: var(--text-2);
   cursor: pointer;
   transition:
-    background 0.16s var(--ease),
-    color 0.16s var(--ease),
-    border-color 0.16s var(--ease);
+    box-shadow 0.16s var(--ease),
+    color 0.16s var(--ease);
 }
 .sys-iconbtn:hover {
-  background: var(--bg);
   color: var(--text);
-  border-color: var(--border-2);
+  box-shadow: var(--shadow-hover);
 }
 
 /* ── §1/§4 stat strip ────────────────────────────────────────────────────── */
@@ -927,8 +920,8 @@ a.sys-crumb:hover {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: var(--card-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
@@ -936,19 +929,15 @@ a.sys-crumb:hover {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   min-width: 0;
-  border-right: 1px solid var(--border);
-}
-.sys-statcell:last-child {
-  border-right: none;
+  /* RECIPE T1: cells separate by whitespace + contrast, never a 1px divider */
 }
 .sys-statcell__label {
   font-size: 12px;
   color: var(--text-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.3;
+  /* RECIPE: stat labels wrap instead of truncating with an ellipsis */
 }
 .sys-statcell__row {
   display: flex;
@@ -957,15 +946,15 @@ a.sys-crumb:hover {
   min-width: 0;
 }
 .sys-statcell__value {
-  font-size: 19px;
-  font-weight: 640;
-  letter-spacing: -0.02em;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.1;
   color: var(--text);
 }
 .sys-statcell__value--hero {
-  font-size: 24px;
-  font-weight: 680;
+  font-size: 28px;
+  font-weight: 600;
 }
 .sys-statcell__delta {
   font-size: 11.5px;
@@ -976,25 +965,10 @@ a.sys-crumb:hover {
   .sys-statrow {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .sys-statcell:nth-child(3n) {
-    border-right: none;
-  }
-  .sys-statcell:nth-child(n + 4) {
-    border-top: 1px solid var(--border);
-  }
 }
 @media (max-width: 560px) {
   .sys-statrow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .sys-statcell:nth-child(3n) {
-    border-right: 1px solid var(--border);
-  }
-  .sys-statcell:nth-child(2n) {
-    border-right: none;
-  }
-  .sys-statcell:nth-child(n + 3) {
-    border-top: 1px solid var(--border);
   }
 }
 
@@ -1026,35 +1000,35 @@ a.sys-crumb:hover {
   align-items: center;
   gap: 12px;
   min-height: 44px;
-  padding: 7px 8px;
-  border-radius: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-tile);
   color: inherit;
   transition: background 0.14s var(--ease);
 }
-.sys-list .sys-listrow:not(:last-child) {
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-}
+/* RECIPE §3: list rows carry NO hairline — separation is spacing + hover fill. */
 .sys-listrow:hover {
-  background: #fafafc;
+  background: var(--bg-well);
 }
 
-/* ── §4 EventChip hover ──────────────────────────────────────────────────── */
+/* ── §4 EventChip hover — the card is already tinted, so lift with a whisper
+   shadow rather than washing the tint gray. ─────────────────────────────── */
 .sys-eventchip {
-  transition: background 0.14s var(--ease);
+  transition:
+    box-shadow 0.16s var(--ease),
+    transform 0.16s var(--spring);
 }
 .sys-eventchip:hover {
-  background: #fafafc;
+  box-shadow: var(--shadow-card);
 }
 
 /* ── §2 sidebar v3 additions ─────────────────────────────────────────────── */
 .sys-section-label {
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-3);
-  padding: 0 10px;
+  padding: 0 12px;
   margin: 14px 0 6px;
 }
 .sys-ask-field {
@@ -1062,30 +1036,30 @@ a.sys-crumb:hover {
   align-items: center;
   gap: 8px;
   width: 100%;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 10px;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-well);
+  border: none;
   color: var(--text-3);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
   transition:
     background 0.16s var(--ease),
-    border-color 0.16s var(--ease);
+    box-shadow 0.16s var(--ease);
 }
 .sys-ask-field:hover {
   background: #fff;
-  border-color: var(--border-2);
+  box-shadow: var(--shadow-card);
 }
 .sys-avatar-footer {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 8px 2px;
+  padding: 12px 8px 2px;
   margin-top: 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--bg-2);
 }
 @media (max-width: 768px) {
   .app-sidebar .sys-section-label,

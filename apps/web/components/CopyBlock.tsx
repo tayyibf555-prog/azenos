@@ -76,9 +76,8 @@ export function CopyBlock({
             height: 36,
             fontSize: 12.5,
             color: "var(--text)",
-            background: "var(--input)",
-            border: "1px solid var(--border-2)",
-            borderRadius: "var(--radius-sm)",
+            background: "var(--bg-well)",
+            borderRadius: "var(--radius-tile)",
             overflowX: "auto",
             whiteSpace: "nowrap",
           }}

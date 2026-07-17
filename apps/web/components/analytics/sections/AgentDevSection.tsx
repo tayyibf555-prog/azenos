@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { formatPence, relativeTime } from "../../../lib/format";
-import { COLORS, tint } from "../../ui";
+import { COLORS } from "../../ui";
+import { TINTS, type SquircleTone } from "../../system/tokens";
 import { HBars, LineChart } from "../charts";
 import type { AgentDevResponse, AnalyticsRange, LabelledValue, SeriesPoint } from "../types";
 import { StatGrid } from "../StatGrid";
@@ -116,12 +117,13 @@ function rating(avg: number | null, count: number): string {
   return `${avg.toFixed(1)} ★`;
 }
 
-const SEVERITY_COLOR: Record<string, string> = {
-  critical: COLORS.red,
-  error: COLORS.red,
-  warning: COLORS.amber,
-  info: COLORS.blue,
-  unspecified: COLORS.grey,
+/** RECIPE §2 tone (not a raw hex) — severity renders as a sanctioned pastel pill. */
+const SEVERITY_TONE: Record<string, SquircleTone> = {
+  critical: "rose",
+  error: "rose",
+  warning: "butter",
+  info: "sky",
+  unspecified: "graphite",
 };
 
 // ── small presentational helpers ──────────────────────────────────────────────
@@ -153,7 +155,8 @@ function Card({
   );
 }
 
-function Pill({ label, value, color }: { label: string; value: number; color: string }) {
+function Pill({ label, value, tone }: { label: string; value: number; tone: SquircleTone }) {
+  const t = TINTS[tone];
   return (
     <span
       style={{
@@ -161,15 +164,16 @@ function Pill({ label, value, color }: { label: string; value: number; color: st
         alignItems: "center",
         gap: 6,
         padding: "3px 9px",
-        borderRadius: 999,
+        borderRadius: "var(--radius-pill)",
         fontSize: 11.5,
-        background: tint(color, 0.12),
-        border: `1px solid ${tint(color, 0.28)}`,
+        // RECIPE §2/T4: the sanctioned pastel wash, no hairline — separation
+        // comes from the wash itself, not a same-hue border.
+        background: t.bg,
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: 3, background: color }} />
+      <span style={{ width: 6, height: 6, borderRadius: 3, background: t.fg }} />
       <span className="muted">{label}</span>
-      <span className="tnum" style={{ fontWeight: 620 }}>{int(value)}</span>
+      <span className="tnum" style={{ fontWeight: 620, color: t.fg }}>{int(value)}</span>
     </span>
   );
 }
@@ -202,18 +206,16 @@ function DataTable<T>({
   }
   return (
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 12.5 }}>
+      {/* RECIPE — the sanctioned .table class (globals.css): row separation is
+          hover-highlight only, never a hairline divider. */}
+      <table className="table" style={{ minWidth: 560 }}>
         <thead>
           <tr>
             {columns.map((c, i) => (
               <th
                 key={c.head}
-                className="faint"
                 style={{
                   textAlign: c.align ?? (i === 0 ? "left" : "right"),
-                  fontWeight: 550,
-                  fontSize: 11,
-                  padding: "0 10px 8px",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -224,16 +226,14 @@ function DataTable<T>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={keyOf(row)} style={{ borderTop: "1px solid var(--border)" }}>
+            <tr key={keyOf(row)}>
               {columns.map((c, i) => (
                 <td
                   key={c.head}
                   className={i === 0 ? undefined : "tnum"}
                   style={{
                     textAlign: c.align ?? (i === 0 ? "left" : "right"),
-                    padding: "9px 10px",
                     whiteSpace: "nowrap",
-                    borderTop: "1px solid var(--border)",
                   }}
                 >
                   {c.render(row)}
@@ -385,7 +385,7 @@ export function AgentDevSection({
           {d.errorsBySeverity.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 2 }}>
               {d.errorsBySeverity.map((s) => (
-                <Pill key={s.label} label={s.label} value={s.value} color={SEVERITY_COLOR[s.label] ?? COLORS.grey} />
+                <Pill key={s.label} label={s.label} value={s.value} tone={SEVERITY_TONE[s.label] ?? "graphite"} />
               ))}
             </div>
           )}
@@ -402,9 +402,9 @@ export function AgentDevSection({
             />
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <Pill label="ok" value={hb.okCount} color={COLORS.green} />
-            <Pill label="degraded" value={hb.degradedCount} color={COLORS.amber} />
-            <Pill label="down" value={hb.downCount} color={COLORS.red} />
+            <Pill label="ok" value={hb.okCount} tone="mint" />
+            <Pill label="degraded" value={hb.degradedCount} tone="butter" />
+            <Pill label="down" value={hb.downCount} tone="rose" />
           </div>
           {(d.integrationDisconnectTotal > 0 || d.integrationDisconnects.length > 0) && (
             <div style={{ display: "grid", gap: 8, paddingTop: 2 }}>

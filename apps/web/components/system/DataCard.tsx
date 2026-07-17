@@ -28,7 +28,7 @@ export function DataCard({
   return (
     <section
       className="card"
-      style={{ padding: 14, display: "grid", gap: title ? 12 : 0 }}
+      style={{ padding: 18, display: "grid", gap: title ? 14 : 0 }}
     >
       {title ? (
         <SectionHeader
@@ -39,7 +39,7 @@ export function DataCard({
           actions={actions}
         />
       ) : null}
-      <div style={bodyPad ? undefined : { margin: -14, marginTop: 0 }}>
+      <div style={bodyPad ? undefined : { margin: -18, marginTop: 0 }}>
         {children}
       </div>
     </section>

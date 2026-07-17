@@ -148,7 +148,7 @@ export function BookingsSection({
       ) : state.status === "error" ? (
         <div
           className="card"
-          style={{ padding: 24, display: "grid", placeItems: "center", borderStyle: "dashed", textAlign: "center", gap: 6 }}
+          style={{ padding: 24, display: "grid", placeItems: "center", border: "1px dashed var(--border-2)", textAlign: "center", gap: 6 }}
         >
           <span className="empty-title">Bookings are offline</span>
           <span className="faint" style={{ fontSize: 12.5, maxWidth: 420 }}>

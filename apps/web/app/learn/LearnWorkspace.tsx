@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Markdown } from "../../components/Markdown";
-import { COLORS, tint } from "../../components/ui";
+import { Pill } from "../../components/system/Pill";
+import type { SquircleTone } from "../../components/system/tokens";
 import { formatLondonDate } from "../../lib/format";
 import {
   KIND_LABEL,
@@ -14,27 +15,16 @@ import {
   type SearchResponse,
 } from "../../components/learn-types";
 
-const KIND_COLOR: Record<string, string> = {
-  industry_primer: COLORS.blue,
-  weekly_digest: COLORS.teal,
-  pattern: COLORS.violet,
-  playbook: COLORS.green,
+/** RECIPE §3: article kind reads as a tinted pill, category = tone. */
+const KIND_TONE: Record<string, SquircleTone> = {
+  industry_primer: "sky",
+  weekly_digest: "lavender",
+  pattern: "peach",
+  playbook: "mint",
 };
 
 function KindBadge({ kind }: { kind: string }) {
-  const tone = KIND_COLOR[kind] ?? COLORS.grey;
-  return (
-    <span
-      className="badge"
-      style={{
-        color: tone,
-        background: tint(tone, 0.12),
-        borderColor: tint(tone, 0.28),
-      }}
-    >
-      {KIND_LABEL[kind] ?? kind}
-    </span>
-  );
+  return <Pill tone={KIND_TONE[kind] ?? "graphite"}>{KIND_LABEL[kind] ?? kind}</Pill>;
 }
 
 /**
@@ -194,11 +184,9 @@ export function LearnWorkspace({
                   display: "grid",
                   gap: 3,
                   padding: "9px 10px",
-                  borderRadius: 8,
+                  borderRadius: "var(--radius-tile)",
                   cursor: "pointer",
-                  background: active ? "var(--card-2)" : "transparent",
-                  border: "1px solid",
-                  borderColor: active ? "var(--border)" : "transparent",
+                  background: active ? "var(--bg-well)" : "transparent",
                 }}
               >
                 <span
@@ -326,10 +314,12 @@ function ArticleCard({ article: a }: { article: KnowledgeArticleItem }) {
           style={{
             display: "flex",
             flexWrap: "wrap",
+            alignItems: "center",
             gap: 6,
-            marginTop: 2,
-            paddingTop: 10,
-            borderTop: "1px solid var(--border)",
+            marginTop: 4,
+            padding: "8px 10px",
+            borderRadius: "var(--radius-tile)",
+            background: "var(--bg-well)",
           }}
         >
           <span

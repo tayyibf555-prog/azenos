@@ -6,7 +6,7 @@ import {
   AlertsPanel,
   ReevaluateButton,
 } from "../../components/health/HealthActions";
-import { COLORS, tint } from "../../components/ui";
+import { Pill, TINTS, type SquircleTone } from "../../components/system";
 import {
   type CellState,
   COLUMN_LABEL,
@@ -24,19 +24,22 @@ import { requireOrgId } from "../../lib/server/org";
 
 export const dynamic = "force-dynamic";
 
-const STATE_COLOR: Record<CellState, string> = {
-  pass: COLORS.green,
-  warn: COLORS.amber,
-  critical: COLORS.red,
-  na: COLORS.grey,
+const STATE_TONE: Record<CellState, SquircleTone> = {
+  pass: "mint",
+  warn: "butter",
+  critical: "rose",
+  na: "graphite",
 };
 
-const BADGE_COLOR: Record<HealthBadge, string> = {
-  green: COLORS.green,
-  amber: COLORS.amber,
-  red: COLORS.red,
+const BADGE_TONE: Record<HealthBadge, SquircleTone> = {
+  green: "mint",
+  amber: "butter",
+  red: "rose",
 };
 
+/** Traffic-light grid cell — a small tinted-container swatch (RECIPE §4), not
+ * a bare dot on white: the wash itself carries the state, the deep-hue dot is
+ * just the accent inside it. */
 function Cell({
   state,
   messages,
@@ -44,55 +47,42 @@ function Cell({
   state: CellState;
   messages: { state: CellState; message: string }[];
 }) {
-  const color = STATE_COLOR[state];
-  const title = messages.map((m) => m.message).join(" · ");
-  if (state === "na") {
-    return (
-      <td style={{ textAlign: "center" }} title={title || "Not applicable"}>
-        <span
-          aria-label="not applicable"
-          style={{
-            display: "inline-block",
-            width: 9,
-            height: 9,
-            borderRadius: 999,
-            border: `1.5px solid ${tint(COLORS.grey, 0.4)}`,
-          }}
-        />
-      </td>
-    );
-  }
+  const tone = STATE_TONE[state];
+  const t = TINTS[tone];
+  const title = messages.map((m) => m.message).join(" · ") || (state === "na" ? "Not applicable" : undefined);
   return (
     <td style={{ textAlign: "center" }} title={title}>
       <span
         aria-label={state}
-        className="dot"
         style={{
-          width: 10,
-          height: 10,
-          display: "inline-block",
-          background: color,
-          boxShadow: state === "critical" ? `0 0 0 4px ${tint(color, 0.16)}` : undefined,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 24,
+          height: 24,
+          borderRadius: "var(--radius-icon)",
+          background: state === "na" ? "var(--bg-well)" : t.bg,
         }}
-      />
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: state === "na" ? "var(--text-3)" : t.fg,
+            opacity: state === "na" ? 0.5 : 1,
+          }}
+        />
+      </span>
     </td>
   );
 }
 
 function HealthBadgePill({ health }: { health: HealthBadge }) {
-  const color = BADGE_COLOR[health];
   return (
-    <span
-      className="badge"
-      style={{
-        color,
-        borderColor: tint(color, 0.35),
-        background: tint(color, 0.1),
-        textTransform: "capitalize",
-      }}
-    >
-      {health}
-    </span>
+    <Pill tone={BADGE_TONE[health]}>
+      <span style={{ textTransform: "capitalize" }}>{health}</span>
+    </Pill>
   );
 }
 
@@ -183,7 +173,7 @@ function Grid({
                     </td>
                     <td style={{ textAlign: "center" }} className="tnum">
                       {p.openAlerts > 0 ? (
-                        <span style={{ color: COLORS.amber, fontWeight: 600 }}>
+                        <span style={{ color: "var(--amber)", fontWeight: 600 }}>
                           {p.openAlerts}
                         </span>
                       ) : (
@@ -244,7 +234,7 @@ export default async function HealthPage() {
 
       {dbError || !grid ? (
         <div className="card" style={{ padding: 20 }}>
-          <strong style={{ color: COLORS.red }}>Database not reachable.</strong>
+          <strong style={{ color: "var(--red)" }}>Database not reachable.</strong>
           <pre className="codeblock" style={{ marginTop: 8 }}>{dbError}</pre>
         </div>
       ) : (
@@ -258,15 +248,14 @@ export default async function HealthPage() {
                 padding: "11px 16px",
                 marginBottom: 18,
                 fontSize: 13,
-                color: COLORS.amber,
-                background: tint(COLORS.amber, 0.08),
-                border: `1px solid ${tint(COLORS.amber, 0.25)}`,
-                borderRadius: 12,
+                color: TINTS.butter.fg,
+                background: TINTS.butter.bg,
+                borderRadius: "var(--radius-tile)",
               }}
             >
               <span
                 className="dot"
-                style={{ width: 7, height: 7, background: COLORS.amber }}
+                style={{ width: 7, height: 7, background: TINTS.butter.fg }}
                 aria-hidden
               />
               {criticalUnacked} critical alert{criticalUnacked === 1 ? "" : "s"}{" "}
@@ -286,31 +275,31 @@ export default async function HealthPage() {
             <StatCard
               label="Silent projects"
               value={grid.silentProjects}
-              accent={grid.silentProjects > 0 ? COLORS.red : undefined}
+              accent={grid.silentProjects > 0 ? "var(--red)" : undefined}
               sub="no recent events"
             />
             <StatCard
               label="Healthy"
               value={grid.totals.green}
-              accent={COLORS.green}
+              accent="var(--green)"
               sub="all checks pass"
             />
             <StatCard
               label="Degraded"
               value={grid.totals.amber}
-              accent={grid.totals.amber > 0 ? COLORS.amber : undefined}
+              accent={grid.totals.amber > 0 ? "var(--amber)" : undefined}
               sub="warn breach"
             />
             <StatCard
               label="Critical"
               value={grid.totals.red}
-              accent={grid.totals.red > 0 ? COLORS.red : undefined}
+              accent={grid.totals.red > 0 ? "var(--red)" : undefined}
               sub="needs attention"
             />
             <StatCard
               label="Open alerts"
               value={alerts.length}
-              accent={alerts.length > 0 ? COLORS.amber : undefined}
+              accent={alerts.length > 0 ? "var(--amber)" : undefined}
               sub={criticalUnacked > 0 ? `${criticalUnacked} critical unacked` : "none unacked"}
             />
           </div>

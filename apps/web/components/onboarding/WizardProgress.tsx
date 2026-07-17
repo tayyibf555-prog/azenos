@@ -1,7 +1,13 @@
-import { COLORS, tint } from "../ui";
 import { STEP_LABELS, WIZARD_STEPS, type WizardStep } from "../../lib/onboarding/wizard";
 
-/** Compact numbered step rail — royal for the active/completed steps, neutral ahead. */
+/**
+ * Compact numbered step rail. RECIPE T3/T6: ink black is the one structural
+ * accent — a done step's circle fills solid black with a white check (the
+ * calendar "selected day" mechanic); the active step gets a thin --text ring
+ * (the calendar "today" mechanic) and its label reads as a softly elevated
+ * white pill (the sidebar "active row" mechanic); upcoming steps stay quiet
+ * text with no fill, no border.
+ */
 export function WizardProgress({ step }: { step: WizardStep }) {
   return (
     <ol
@@ -19,7 +25,6 @@ export function WizardProgress({ step }: { step: WizardStep }) {
       {WIZARD_STEPS.map((s, i) => {
         const done = s < step;
         const active = s === step;
-        const color = done || active ? COLORS.blue : "var(--text-3)";
         return (
           <li key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span
@@ -29,12 +34,12 @@ export function WizardProgress({ step }: { step: WizardStep }) {
                 alignItems: "center",
                 gap: 7,
                 padding: "5px 10px 5px 6px",
-                borderRadius: 999,
+                borderRadius: "var(--radius-pill)",
                 fontSize: 12.5,
                 fontWeight: active ? 650 : 500,
-                color: active ? COLORS.blue : done ? "var(--text)" : "var(--text-3)",
-                background: active ? tint(COLORS.blue, 0.12) : "transparent",
-                border: `1px solid ${active ? tint(COLORS.blue, 0.28) : "var(--border)"}`,
+                color: active || done ? "var(--text)" : "var(--text-3)",
+                background: active ? "#ffffff" : "transparent",
+                boxShadow: active ? "var(--shadow-card)" : "none",
               }}
             >
               <span
@@ -48,9 +53,9 @@ export function WizardProgress({ step }: { step: WizardStep }) {
                   borderRadius: "50%",
                   fontSize: 10.5,
                   fontVariantNumeric: "tabular-nums",
-                  color: done ? "var(--bg)" : active ? COLORS.blue : "var(--text-3)",
-                  background: done ? COLORS.blue : "transparent",
-                  border: done ? "none" : `1px solid ${color}`,
+                  color: done ? "var(--on-pill)" : active ? "var(--text)" : "var(--text-3)",
+                  background: done ? "var(--pill-active)" : "transparent",
+                  boxShadow: active && !done ? "inset 0 0 0 1.5px var(--text)" : "none",
                 }}
               >
                 {done ? "✓" : s}
@@ -63,7 +68,7 @@ export function WizardProgress({ step }: { step: WizardStep }) {
                 style={{
                   width: 14,
                   height: 1,
-                  background: done ? COLORS.blue : "var(--border)",
+                  background: done ? "var(--pill-active)" : "var(--border)",
                 }}
               />
             )}

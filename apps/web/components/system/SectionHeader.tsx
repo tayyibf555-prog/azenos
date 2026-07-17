@@ -34,8 +34,8 @@ export function SectionHeader({
         <h3
           style={{
             fontSize: 15,
-            fontWeight: 620,
-            letterSpacing: "-0.015em",
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
             color: "var(--text)",
           }}
         >

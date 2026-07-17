@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { formatPence } from "../../lib/format";
-import { COLORS, tint } from "../ui";
+import { Pill } from "../system";
 import type { CostStatementClient, CostStatements } from "../money-types";
 
 function applyMarkup(costPence: number, pct: number): number {
@@ -151,7 +151,7 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
                         onSave={(pct) => saveMarkup(c.clientId, pct)}
                       />
                     </td>
-                    <td className="tnum" style={{ textAlign: "right", fontWeight: 600, color: COLORS.green }}>
+                    <td className="tnum" style={{ textAlign: "right", fontWeight: 600, color: "var(--green)" }}>
                       {formatPence(c.billablePence)}
                     </td>
                     <td style={{ textAlign: "right" }}>
@@ -162,7 +162,7 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
                   </tr>
                   {expanded === c.clientId &&
                     c.projects.map((p) => (
-                      <tr key={p.projectId} style={{ background: tint(COLORS.blue, 0.03) }}>
+                      <tr key={p.projectId} style={{ background: "var(--bg-well)" }}>
                         <td style={{ paddingLeft: 24 }} className="faint">{p.name}</td>
                         <td style={{ textAlign: "right" }} className="faint tnum">{formatPence(p.costPence)}</td>
                         <td />
@@ -178,7 +178,7 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
                 <td>Total</td>
                 <td className="tnum" style={{ textAlign: "right" }}>{formatPence(totals.cost)}</td>
                 <td />
-                <td className="tnum" style={{ textAlign: "right", color: COLORS.green }}>{formatPence(totals.billable)}</td>
+                <td className="tnum" style={{ textAlign: "right", color: "var(--green)" }}>{formatPence(totals.billable)}</td>
                 <td />
               </tr>
             </tfoot>
@@ -190,8 +190,9 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
         <div
           style={{
             marginTop: 14,
-            paddingTop: 14,
-            borderTop: "1px solid var(--hairline)",
+            padding: 14,
+            background: "var(--bg-well)",
+            borderRadius: "var(--radius-tile)",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
@@ -210,12 +211,10 @@ export function CostStatementsPanel({ initial }: { initial: CostStatements }) {
           {initial.providerTotals.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
               {initial.providerTotals.map((p) => (
-                <span
-                  key={p.provider}
-                  className="badge tnum"
-                  style={{ background: tint(COLORS.violet, 0.1), color: COLORS.violet }}
-                >
-                  {p.label} · {formatPence(p.pence)}
+                <span key={p.provider} className="tnum">
+                  <Pill tone="lavender">
+                    {p.label} · {formatPence(p.pence)}
+                  </Pill>
                 </span>
               ))}
             </div>

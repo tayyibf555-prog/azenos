@@ -46,7 +46,6 @@ export function TrackingPlanCard({
           style={{
             color: fullyCovered ? COLORS.green : COLORS.amber,
             background: tint(fullyCovered ? COLORS.green : COLORS.amber, 0.12),
-            borderColor: tint(fullyCovered ? COLORS.green : COLORS.amber, 0.28),
             flex: "none",
           }}
         >
@@ -87,9 +86,9 @@ function TrackingPlanRow({
   return (
     <div
       style={{
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        background: "var(--card-2)",
+        border: "none",
+        borderRadius: "var(--radius-tile)",
+        background: "var(--bg-well)",
       }}
     >
       <div
@@ -118,9 +117,6 @@ function TrackingPlanRow({
             background: item.required
               ? tint(COLORS.amber, 0.1)
               : "var(--card)",
-            borderColor: item.required
-              ? tint(COLORS.amber, 0.26)
-              : "var(--border)",
             flex: "none",
           }}
         >

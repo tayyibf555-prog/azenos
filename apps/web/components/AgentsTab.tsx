@@ -205,7 +205,6 @@ function AgentCard({ agent }: { agent: AgentSummary }) {
           style={{
             color,
             background: tint(color, 0.13),
-            borderColor: tint(color, 0.32),
             flex: "none",
           }}
         >
@@ -246,7 +245,6 @@ function AgentCard({ agent }: { agent: AgentSummary }) {
 
       <div
         style={{
-          borderTop: "1px solid var(--border)",
           paddingTop: 12,
           display: "flex",
           alignItems: "baseline",

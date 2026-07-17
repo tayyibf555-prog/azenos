@@ -412,12 +412,7 @@ function OverviewTab({
       </div>
 
       <section className="card" style={{ padding: 0 }}>
-        <div
-          style={{
-            padding: "14px 18px",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>Event types · last 7 days</h3>
         </div>
         {last7.length === 0 ? (

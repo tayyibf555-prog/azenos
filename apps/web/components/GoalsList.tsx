@@ -100,9 +100,7 @@ export function GoalsList({
   if (goals.length === 0) {
     return (
       <section className="card" style={{ padding: 0 }}>
-        <div
-          style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}
-        >
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>Goals</h3>
         </div>
         <div className="empty" style={{ padding: "30px 24px" }}>
@@ -117,9 +115,7 @@ export function GoalsList({
 
   return (
     <section className="card" style={{ padding: 0 }}>
-      <div
-        style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}
-      >
+      <div style={{ padding: "14px 18px 4px" }}>
         <h3 style={{ fontSize: 14 }}>Goals vs actuals</h3>
       </div>
       <div style={{ display: "grid", gap: 0 }}>
@@ -138,7 +134,6 @@ export function GoalsList({
               key={`${goal.metric}-${goal.period}-${i}`}
               style={{
                 padding: "13px 18px",
-                borderTop: i === 0 ? "none" : "1px solid var(--border)",
                 display: "grid",
                 gap: 7,
               }}
@@ -171,7 +166,7 @@ export function GoalsList({
               <div
                 style={{
                   height: 7,
-                  borderRadius: 4,
+                  borderRadius: "var(--radius-pill)",
                   background: "var(--card-2)",
                   overflow: "hidden",
                 }}

@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DictationMic } from "../../components/ask/DictationMic";
-import { COLORS } from "../../components/ui";
+import { TINTS } from "../../components/system/tokens";
 import type { DictationController } from "../../lib/useDictation";
 
 /**
@@ -57,8 +57,9 @@ describe("DictationMic", () => {
     expect(html).toContain("1:05");
     expect(html).toMatch(/class="btn btn-sm pulse"/);
     // Assert the TOKEN, not a hex literal — the palette is allowed to evolve
-    // (Apple-theme remap 2026-07-16: teal token → quiet ice-blue).
-    expect(html).toContain(COLORS.teal);
+    // (RECIPE rollout 2026-07-17: quiet ice-blue teal → the §3 "sky" tinted-
+    // container pill — recording reads as a tinted state, not a bespoke hue).
+    expect(html).toContain(TINTS.sky.fg);
   });
 
   it("renders a subtle disabled spinner while transcribing", () => {

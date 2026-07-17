@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { formatPence } from "../../lib/format";
-import { COLORS } from "../ui";
+import { Pill } from "../system";
 import {
   PAYMENT_KINDS,
   type ClientOption,
@@ -167,7 +167,7 @@ function ManualEntry({
           {busy ? "Saving…" : "Record payment"}
         </button>
         {msg && (
-          <span style={{ fontSize: 12.5, color: msg.ok ? COLORS.green : "var(--red)" }}>{msg.text}</span>
+          <span style={{ fontSize: 12.5, color: msg.ok ? "var(--green)" : "var(--red)" }}>{msg.text}</span>
         )}
       </div>
     </div>
@@ -252,7 +252,7 @@ function CsvImport({ onDone }: { onDone: () => void }) {
           </button>
         )}
         {msg && (
-          <span style={{ fontSize: 12.5, color: msg.ok ? COLORS.green : "var(--red)" }}>{msg.text}</span>
+          <span style={{ fontSize: 12.5, color: msg.ok ? "var(--green)" : "var(--red)" }}>{msg.text}</span>
         )}
       </div>
 
@@ -279,10 +279,10 @@ function CsvImport({ onDone }: { onDone: () => void }) {
                   <td className="faint">{r.kind ?? "—"}</td>
                   <td>
                     {r.valid ? (
-                      <span className="badge" style={{ color: COLORS.green }}>ok</span>
+                      <Pill tone="mint">ok</Pill>
                     ) : (
-                      <span className="badge" style={{ color: "var(--red)" }} title={r.error}>
-                        {r.error ?? "error"}
+                      <span title={r.error}>
+                        <Pill tone="rose">{r.error ?? "error"}</Pill>
                       </span>
                     )}
                   </td>

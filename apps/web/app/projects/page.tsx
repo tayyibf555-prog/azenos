@@ -180,7 +180,6 @@ export default async function ProjectsPage() {
                     alignItems: "center",
                     marginTop: "auto",
                     paddingTop: 11,
-                    borderTop: "1px solid var(--border)",
                     fontSize: 12.5,
                   }}
                 >

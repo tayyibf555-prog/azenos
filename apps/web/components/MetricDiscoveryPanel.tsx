@@ -183,9 +183,9 @@ function DiscoveryTile({
   return (
     <div
       style={{
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        background: "var(--card-2)",
+        border: "none",
+        borderRadius: "var(--radius-tile)",
+        background: "var(--bg-well)",
         padding: 12,
         display: "grid",
         gap: 6,
@@ -198,9 +198,8 @@ function DiscoveryTile({
           className="badge"
           style={{
             fontSize: 10,
-            color: COLORS.blue,
-            background: tint(COLORS.blue, 0.1),
-            borderColor: tint(COLORS.blue, 0.26),
+            color: "var(--text-2)",
+            background: "var(--card)",
             flex: "none",
           }}
         >

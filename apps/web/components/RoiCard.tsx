@@ -66,19 +66,25 @@ export function RoiCard({
     return (
       <section
         className="card"
-        style={{ padding: 20, display: "flex", alignItems: "center", gap: 14, borderStyle: "dashed" }}
+        style={{
+          padding: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          border: "1px dashed var(--border-2)",
+        }}
       >
         <div
           aria-hidden
           style={{
             width: 40,
             height: 40,
-            borderRadius: 10,
+            borderRadius: "var(--radius-icon)",
             flex: "none",
             display: "grid",
             placeItems: "center",
             fontSize: 20,
-            background: tint(COLORS.blue, 0.12),
+            background: tint(COLORS.green, 0.12),
           }}
         >
           ✦
@@ -113,8 +119,7 @@ export function RoiCard({
         gap: 22,
         flexWrap: "wrap",
         alignItems: "center",
-        background:
-          "linear-gradient(90deg, rgba(63,178,127,0.07), transparent 72%)",
+        background: tint(COLORS.green, 0.055),
       }}
     >
       <div style={{ flex: "none", minWidth: 120 }}>
@@ -150,7 +155,7 @@ export function RoiCard({
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           <Cell label="Attributed revenue" value={formatPence(roi.revenueAttributedPence)} tone={COLORS.green} />
-          <Cell label="Time value" value={formatPence(roi.timeValuePence)} tone={COLORS.blue} />
+          <Cell label="Time value" value={formatPence(roi.timeValuePence)} tone="var(--text)" />
           <Cell label="Retainer" value={formatPence(roi.retainerPence)} tone={COLORS.grey} />
           <Cell label="Agent cost" value={formatPence(roi.runCostPence)} tone={COLORS.amber} />
         </div>
@@ -172,8 +177,8 @@ function Cell({ label, value, tone }: { label: string; value: string; tone: stri
     <div
       style={{
         background: "var(--card-2)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
+        border: "none",
+        borderRadius: "var(--radius-tile)",
         padding: "7px 11px",
         minWidth: 92,
       }}

@@ -52,9 +52,8 @@ export function StepClient({
           display: "inline-flex",
           gap: 3,
           padding: 3,
-          background: "var(--card-2)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-sm)",
+          background: "var(--bg-well)",
+          borderRadius: "var(--radius-pill)",
         }}
       >
         <button

@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { COLORS } from "../ui";
+import { Pill, TINTS, type SquircleTone } from "../system";
 import type { OpenAlert } from "../../lib/server/health/queries";
 
-const SEV_COLOR: Record<string, string> = {
-  critical: COLORS.red,
-  warn: COLORS.amber,
-  info: COLORS.teal,
+const SEV_TONE: Record<string, SquircleTone> = {
+  critical: "rose",
+  warn: "butter",
+  info: "sky",
 };
 
 function timeAgo(iso: string): string {
@@ -78,7 +78,7 @@ export function AlertsPanel({ alerts }: { alerts: OpenAlert[] }) {
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <span
             className="dot"
-            style={{ width: 8, height: 8, background: COLORS.green }}
+            style={{ width: 8, height: 8, background: TINTS.mint.fg }}
             aria-hidden
           />
           <span style={{ fontWeight: 600 }}>All clear</span>
@@ -110,23 +110,15 @@ export function AlertsPanel({ alerts }: { alerts: OpenAlert[] }) {
               width: 9,
               height: 9,
               flex: "none",
-              background: SEV_COLOR[a.severity] ?? COLORS.grey,
+              background: TINTS[SEV_TONE[a.severity] ?? "graphite"].fg,
             }}
             aria-hidden
           />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontWeight: 600, fontSize: 13.5 }}>{a.message}</span>
-              {a.escalated && (
-                <span className="badge" style={{ fontSize: 10.5 }}>
-                  escalated
-                </span>
-              )}
-              {a.ackedAt && (
-                <span className="badge" style={{ fontSize: 10.5 }}>
-                  acked
-                </span>
-              )}
+              {a.escalated && <Pill tone="rose">escalated</Pill>}
+              {a.ackedAt && <Pill tone="graphite">acked</Pill>}
             </div>
             <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
               {a.clientName ? `${a.clientName} · ` : ""}

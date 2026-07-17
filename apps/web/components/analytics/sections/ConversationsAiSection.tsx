@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { COLORS, humanize, tint } from "../../ui";
+import { TINTS } from "../../system/tokens";
+import { Pill } from "../../system/Pill";
 import type {
   AnalyticsRange,
   ConversationsAiResponse,
@@ -313,8 +315,9 @@ function ConversationsBody({
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 12,
-                paddingTop: 4,
-                borderTop: "1px solid var(--border)",
+                // RECIPE T1: spacing separates this sub-row, not a hairline.
+                marginTop: 4,
+                paddingTop: 10,
               }}
             >
               <span className="faint" style={{ fontSize: 11.5 }}>
@@ -547,17 +550,8 @@ function QuestionRowItem({
         {row.question}
       </span>
       {row.contentGap && (
-        <span
-          className="badge"
-          style={{
-            position: "relative",
-            color: COLORS.amber,
-            background: tint(COLORS.amber, 0.13),
-            borderColor: tint(COLORS.amber, 0.3),
-            fontSize: 10.5,
-          }}
-        >
-          gap
+        <span style={{ position: "relative" }}>
+          <Pill tone="peach">gap</Pill>
         </span>
       )}
       <TrendArrow trend={row.trend} />
@@ -574,17 +568,8 @@ function QuestionRowItem({
 function TrendArrow({ trend }: { trend: QuestionRow["trend"] }) {
   if (trend === "new") {
     return (
-      <span
-        className="badge"
-        style={{
-          position: "relative",
-          color: COLORS.teal,
-          background: tint(COLORS.teal, 0.13),
-          borderColor: tint(COLORS.teal, 0.3),
-          fontSize: 10.5,
-        }}
-      >
-        new
+      <span style={{ position: "relative" }}>
+        <Pill tone="sky">new</Pill>
       </span>
     );
   }
@@ -605,22 +590,25 @@ function TrendArrow({ trend }: { trend: QuestionRow["trend"] }) {
 // ── Content gaps callout ─────────────────────────────────────────────────────
 
 function ContentGaps({ gaps }: { gaps: QuestionRow[] }) {
+  // RECIPE T4: a whole-card pastel wash (peach = "attention"), not a
+  // borrowed-COLORS.amber hairline wash — the tint itself is the separation
+  // from its white siblings, with rows sitting in the tone's deeper wash.
+  const t = TINTS.peach;
   return (
     <div
-      className="card"
       style={{
         padding: 18,
         display: "grid",
         gap: 12,
-        borderColor: tint(COLORS.amber, 0.3),
-        background: tint(COLORS.amber, 0.05),
+        borderRadius: "var(--radius-card)",
+        background: t.bg,
       }}
     >
       <div style={{ display: "grid", gap: 3 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 640, color: COLORS.amber }}>
+        <span style={{ fontSize: 13.5, fontWeight: 640, color: t.fg }}>
           Content gaps · {gaps.length}
         </span>
-        <span className="faint" style={{ fontSize: 12 }}>
+        <span style={{ fontSize: 12, color: t.fg, opacity: 0.72 }}>
           Questions people ask often but the co-pilot handles poorly — it escalates
           or sours sentiment. Prime candidates for a knowledge-base update.
         </span>
@@ -634,8 +622,8 @@ function ContentGaps({ gaps }: { gaps: QuestionRow[] }) {
               alignItems: "center",
               gap: 12,
               padding: "8px 10px",
-              borderRadius: 8,
-              background: "var(--card-2)",
+              borderRadius: "var(--radius-tile)",
+              background: t.pill,
             }}
             title={g.question}
           >
@@ -644,6 +632,7 @@ function ContentGaps({ gaps }: { gaps: QuestionRow[] }) {
                 flex: 1,
                 fontSize: 12.5,
                 fontWeight: 520,
+                color: t.fg,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -652,16 +641,16 @@ function ContentGaps({ gaps }: { gaps: QuestionRow[] }) {
               {g.question}
             </span>
             {g.escalationRate > 0 && (
-              <span className="tnum faint" style={{ fontSize: 11, color: COLORS.amber }}>
+              <span className="tnum" style={{ fontSize: 11, color: t.fg, opacity: 0.8 }}>
                 {pct(g.escalationRate)} escalate
               </span>
             )}
             {g.negativeRate > 0 && (
-              <span className="tnum faint" style={{ fontSize: 11, color: COLORS.red }}>
+              <span className="tnum" style={{ fontSize: 11, color: COLORS.red }}>
                 {pct(g.negativeRate)} negative
               </span>
             )}
-            <span className="tnum" style={{ flex: "none", fontSize: 12.5, fontWeight: 600 }}>
+            <span className="tnum" style={{ flex: "none", fontSize: 12.5, fontWeight: 600, color: t.fg }}>
               {nf(g.count)}×
             </span>
           </div>
@@ -676,28 +665,30 @@ function ContentGaps({ gaps }: { gaps: QuestionRow[] }) {
 function SentimentTopicMatrix({ rows }: { rows: SentimentTopicRow[] }) {
   return (
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table style={{ width: "100%", minWidth: 380, borderCollapse: "collapse", fontSize: 12.5 }}>
+      {/* RECIPE — the sanctioned .table class (globals.css): row separation is
+          hover-highlight only, never a hairline divider. */}
+      <table className="table" style={{ minWidth: 380 }}>
         <thead>
-          <tr className="faint" style={{ textAlign: "right" }}>
-            <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 550 }}>Topic</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550, color: COLORS.green }}>Positive</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550 }}>Neutral</th>
-            <th style={{ padding: "6px 8px", fontWeight: 550, color: COLORS.red }}>Negative</th>
+          <tr style={{ textAlign: "right" }}>
+            <th style={{ textAlign: "left" }}>Topic</th>
+            <th style={{ color: COLORS.green }}>Positive</th>
+            <th>Neutral</th>
+            <th style={{ color: COLORS.red }}>Negative</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.intent} style={{ borderTop: "1px solid var(--border)", textAlign: "right" }}>
-              <td style={{ textAlign: "left", padding: "8px", fontWeight: 540 }}>
+            <tr key={row.intent} style={{ textAlign: "right" }}>
+              <td style={{ textAlign: "left", fontWeight: 540 }}>
                 {humanize(row.intent)}
               </td>
-              <td className="tnum" style={{ padding: "8px", color: COLORS.green }}>
+              <td className="tnum" style={{ color: COLORS.green }}>
                 {nf(row.positive)}
               </td>
-              <td className="tnum muted" style={{ padding: "8px" }}>
+              <td className="tnum muted">
                 {nf(row.neutral)}
               </td>
-              <td className="tnum" style={{ padding: "8px", color: COLORS.red }}>
+              <td className="tnum" style={{ color: COLORS.red }}>
                 {nf(row.negative)}
               </td>
             </tr>

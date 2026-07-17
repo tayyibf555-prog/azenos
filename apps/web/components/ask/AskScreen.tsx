@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDictation } from "../../lib/useDictation";
 import { ActivationBanner } from "../ActivationBanner";
-import { COLORS, tint } from "../ui";
+import { TINTS } from "../system/tokens";
 import { deriveAskContext } from "./context";
 import { DictationMic } from "./DictationMic";
 import { MessageList } from "./MessageList";
@@ -128,7 +128,7 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 116px)", minHeight: 440 }}>
       <ActivationBanner missing={hasAnthropicKey ? [] : ["ANTHROPIC_API_KEY"]} />
-      <div style={{ display: "flex", gap: 20, flex: 1, minHeight: 0 }}>
+      <div style={{ display: "flex", gap: 28, flex: 1, minHeight: 0 }}>
         {/* History sidebar */}
         <aside
         style={{
@@ -136,8 +136,6 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
           flex: "none",
           display: "flex",
           flexDirection: "column",
-          borderRight: "1px solid var(--border)",
-          paddingRight: 16,
         }}
       >
         <button
@@ -190,13 +188,14 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
                 style={{
                   textAlign: "left",
                   padding: "8px 9px",
-                  borderRadius: "var(--radius-sm)",
+                  borderRadius: "var(--radius-tile)",
                   border: "none",
                   cursor: "pointer",
                   fontSize: 12.5,
                   fontFamily: "inherit",
                   color: active ? "var(--text)" : "var(--text-2)",
-                  background: active ? "var(--card-2)" : "transparent",
+                  background: active ? "#ffffff" : "transparent",
+                  boxShadow: active ? "var(--shadow-card)" : "none",
                 }}
                 title={s.title ?? "Untitled"}
               >
@@ -216,14 +215,14 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
                 style={{
                   width: 40,
                   height: 40,
-                  borderRadius: 11,
+                  borderRadius: "var(--radius-circle)",
                   margin: "0 auto 16px",
-                  background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
+                  background: "var(--ink)",
                   display: "grid",
                   placeItems: "center",
-                  color: "var(--bg)",
-                  fontWeight: 800,
-                  fontSize: 18,
+                  color: "var(--on-pill)",
+                  fontWeight: 700,
+                  fontSize: 17,
                 }}
                 aria-hidden
               >
@@ -271,10 +270,9 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
               margin: "12px auto 0",
               width: "100%",
               fontSize: 12.5,
-              color: "var(--amber)",
-              background: tint(COLORS.amber, 0.08),
-              border: `1px solid ${tint(COLORS.amber, 0.22)}`,
-              borderRadius: "var(--radius-sm)",
+              color: TINTS.butter.fg,
+              background: TINTS.butter.bg,
+              borderRadius: "var(--radius-tile)",
               padding: "9px 12px",
             }}
           >
@@ -289,9 +287,9 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
               display: "flex",
               alignItems: "flex-end",
               gap: 10,
-              background: "var(--input)",
-              border: "1px solid var(--border-2)",
-              borderRadius: "var(--radius)",
+              background: "var(--bg-well)",
+              border: "none",
+              borderRadius: "var(--radius-tile)",
               padding: "8px 8px 8px 14px",
             }}
           >

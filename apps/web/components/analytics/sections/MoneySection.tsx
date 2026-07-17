@@ -7,6 +7,7 @@ import { Donut, Leaderboard, LineChart, topSegments } from "../charts";
 import { StatGrid } from "../StatGrid";
 import { StatTile } from "../StatTile";
 import { ExpandableChart } from "../ExpandableChart";
+import { Pill } from "../../system/Pill";
 import { ComingOnline, SectionFrame, SectionSkeleton, useSectionData } from "./_shell";
 
 /**
@@ -348,17 +349,10 @@ export function MoneySection({
               />
             </StatGrid>
             {d.revenueConcentration.tone === "high" && (
-              <span
-                className="badge"
-                style={{
-                  width: "fit-content",
-                  color: COLORS.red,
-                  background: tint(COLORS.red, 0.12),
-                  borderColor: tint(COLORS.red, 0.28),
-                  fontSize: 11.5,
-                }}
-              >
-                Over half of agency revenue comes from this one client — a single-client risk.
+              <span style={{ width: "fit-content" }}>
+                <Pill tone="rose">
+                  Over half of agency revenue comes from this one client — a single-client risk.
+                </Pill>
               </span>
             )}
             <ExpandableChart label="lifetime value curve">

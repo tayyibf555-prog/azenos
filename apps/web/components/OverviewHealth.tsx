@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { COLORS, tint } from "./ui";
+import { Pill, TINTS } from "./system";
 
 interface HealthSummary {
   green: number;
@@ -120,26 +120,18 @@ export function OverviewHealth() {
           <span className="faint" style={{ fontSize: 12 }}>
             Project health
           </span>
-          <HealthCount color={COLORS.green} label="green" n={hs.green ?? 0} />
-          <HealthCount color={COLORS.amber} label="amber" n={hs.amber ?? 0} />
-          <HealthCount color={COLORS.red} label="red" n={hs.red ?? 0} />
+          <HealthCount color={TINTS.mint.fg} label="green" n={hs.green ?? 0} />
+          <HealthCount color={TINTS.butter.fg} label="amber" n={hs.amber ?? 0} />
+          <HealthCount color={TINTS.rose.fg} label="red" n={hs.red ?? 0} />
         </div>
       )}
 
       {anomalies !== null && (
-        <Link
-          href={anomalyHref}
-          className="badge"
-          style={{
-            color: anomalies > 0 ? COLORS.red : "var(--text-2)",
-            background:
-              anomalies > 0 ? tint(COLORS.red, 0.12) : "var(--card-2)",
-            borderColor:
-              anomalies > 0 ? tint(COLORS.red, 0.3) : "var(--border)",
-          }}
-        >
-          {anomalies > 0 ? "●" : "○"} {anomalies} open{" "}
-          {anomalies === 1 ? "anomaly" : "anomalies"}
+        <Link href={anomalyHref} style={{ textDecoration: "none" }}>
+          <Pill tone={anomalies > 0 ? "rose" : "graphite"}>
+            {anomalies > 0 ? "●" : "○"} {anomalies} open{" "}
+            {anomalies === 1 ? "anomaly" : "anomalies"}
+          </Pill>
         </Link>
       )}
     </div>

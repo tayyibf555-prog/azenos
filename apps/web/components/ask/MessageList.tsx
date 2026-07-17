@@ -1,7 +1,7 @@
 "use client";
 
 import { Markdown } from "../Markdown";
-import { COLORS, tint } from "../ui";
+import { TINTS } from "../system/tokens";
 import { AnswerTrace } from "./AnswerTrace";
 import type { ChatMessage } from "./types";
 
@@ -41,9 +41,9 @@ function UserBubble({ text }: { text: string }) {
       <div
         style={{
           maxWidth: "82%",
-          background: "var(--card-2)",
-          border: "1px solid var(--border-2)",
-          borderRadius: "12px 12px 3px 12px",
+          background: "var(--bg-well)",
+          border: "none",
+          borderRadius: "var(--radius-tile) var(--radius-tile) 4px var(--radius-tile)",
           padding: "9px 13px",
           fontSize: 13.5,
           lineHeight: 1.5,
@@ -68,11 +68,11 @@ function AssistantBubble({ msg }: { msg: ChatMessage }) {
             width: 18,
             height: 18,
             borderRadius: 5,
-            background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
+            background: "var(--ink)",
             display: "grid",
             placeItems: "center",
-            color: "var(--bg)",
-            fontWeight: 800,
+            color: "var(--on-pill)",
+            fontWeight: 700,
             fontSize: 10,
             flex: "none",
           }}
@@ -101,7 +101,7 @@ function AssistantBubble({ msg }: { msg: ChatMessage }) {
               height: 14,
               marginLeft: 2,
               verticalAlign: "text-bottom",
-              background: "var(--accent)",
+              background: "var(--ink)",
               animation: "askBlink 1s step-end infinite",
             }}
           />
@@ -116,14 +116,13 @@ function AssistantBubble({ msg }: { msg: ChatMessage }) {
               alignItems: "center",
               gap: 8,
               fontSize: 12.5,
-              color: "var(--amber)",
-              background: tint(COLORS.amber, 0.08),
-              border: `1px solid ${tint(COLORS.amber, 0.22)}`,
-              borderRadius: "var(--radius-sm)",
+              color: TINTS.rose.fg,
+              background: TINTS.rose.bg,
+              borderRadius: "var(--radius-tile)",
               padding: "8px 11px",
             }}
           >
-            <span className="dot" style={{ width: 6, height: 6, background: "var(--amber)" }} aria-hidden />
+            <span className="dot" style={{ width: 6, height: 6, background: TINTS.rose.fg }} aria-hidden />
             {msg.error}
           </div>
         )}

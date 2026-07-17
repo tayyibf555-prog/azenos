@@ -57,7 +57,14 @@ export function AppFrame({
         href={item.href}
         className={active ? "nav-item nav-item-active" : "nav-item"}
       >
-        <span style={{ color: active ? "#ffffff" : "var(--text-3)", display: "inline-flex" }}>
+        {/* RECIPE §3: the active row is a WHITE elevated pill, so its icon takes
+            the ink text tone (NOT white). Resting icons stay quiet gray. */}
+        <span
+          style={{
+            color: active ? "var(--text)" : "var(--text-3)",
+            display: "inline-flex",
+          }}
+        >
           <SysIcon name={item.icon} size={16} strokeWidth={1.6} />
         </span>
         {item.label}
@@ -78,16 +85,18 @@ export function AppFrame({
             padding: "2px 8px 12px",
           }}
         >
+          {/* RECIPE §2/T3: ink is the one strong fill — the brand mark is a
+              solid warm-black square, no gradient. */}
           <span
             style={{
               width: 28,
               height: 28,
               borderRadius: 9,
-              background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
+              background: "var(--ink)",
               display: "grid",
               placeItems: "center",
-              color: "var(--accent-ink)",
-              fontWeight: 800,
+              color: "var(--on-pill)",
+              fontWeight: 700,
               fontSize: 14,
             }}
           >
@@ -122,10 +131,10 @@ export function AppFrame({
           className="sidebar-shortcuts"
           style={{
             marginTop: "auto",
-            padding: "10px",
-            borderRadius: 10,
-            background: "var(--bg)",
-            border: "1px solid var(--border)",
+            padding: "12px",
+            borderRadius: 16,
+            background: "var(--bg-well)",
+            border: "none",
           }}
         >
           <div

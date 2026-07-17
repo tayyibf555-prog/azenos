@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { COLORS, tint } from "../ui";
 
 /**
  * Chart primitive kit for the Analytics screen (Soft-Light, on white cards).
- * All marks are COLORS-based (slate → royal ramp for intensity),
+ * All marks are COLORS-based (slate → ink ramp for intensity, RECIPE T3),
  * label-clear, and quietly interactive. The full line chart lives in
  * components/charts/LineChart — re-exported here so sections import from one
  * place — these primitives cover the shapes it does not.
@@ -34,9 +34,14 @@ function mix(from: string, to: string, t: number): string {
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
 
-/** The signature ice→royal ramp used across the kit for intensity. */
+/**
+ * Intensity ramp used across the kit (heatmap cells, retention triangle,
+ * Leaderboard's default rank tint): quiet slate → warm near-black ink.
+ * RECIPE T3 — black is the one strong structural colour, so the "hot"/rank-1
+ * end lands on --ink rather than the old royal-blue (#3457D5) endpoint.
+ */
 export function intensityColor(t: number): string {
-  return mix(COLORS.teal, COLORS.blue, t);
+  return mix(COLORS.teal, "#14140F" /* --ink */, t);
 }
 
 const DEFAULT_PALETTE: readonly string[] = [
@@ -150,7 +155,6 @@ export function MiniTrend({
   width?: number;
   height?: number;
 }) {
-  const gradId = useId();
   if (values.length < 2) {
     return (
       <svg width={width} height={height} aria-hidden style={{ display: "block" }} />
@@ -173,13 +177,8 @@ export function MiniTrend({
       aria-label="trend sparkline"
       style={{ display: "block", overflow: "visible" }}
     >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.24} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${gradId})`} stroke="none" />
+      {/* RECIPE §5: no gradients — flat deep-hue wash under the line */}
+      <path d={area} fill={color} fillOpacity={0.1} stroke="none" />
       <path
         d={line}
         fill="none"

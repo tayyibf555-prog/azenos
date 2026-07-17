@@ -8,7 +8,8 @@ import { Markdown } from "../../../components/Markdown";
 import { PageHeader } from "../../../components/PageHeader";
 import { ResendBriefButton } from "../../../components/ResendBriefButton";
 import { ShareReportPanel } from "../../../components/ShareReportPanel";
-import { COLORS, tint } from "../../../components/ui";
+import { Pill } from "../../../components/system/Pill";
+import type { SquircleTone } from "../../../components/system/tokens";
 import type { BriefPeriod, BriefStatus } from "../../../components/brief-types";
 import { formatLondonDate, formatLondonTime } from "../../../lib/format";
 import { requireOrgId } from "../../../lib/server/org";
@@ -16,10 +17,11 @@ import { listMonthlyReportTokens } from "../../../lib/server/share";
 
 export const dynamic = "force-dynamic";
 
-const PERIOD_COLOR: Record<string, string> = {
-  daily: COLORS.blue,
-  weekly: COLORS.violet,
-  monthly: COLORS.teal,
+/** RECIPE §3 tinted pill per brief cadence — no bespoke colour, category tone only. */
+const PERIOD_TONE: Record<string, SquircleTone> = {
+  daily: "sky",
+  weekly: "lavender",
+  monthly: "butter",
 };
 
 export default async function BriefDetailPage({
@@ -47,7 +49,6 @@ export default async function BriefDetailPage({
 
   const period = row.period as BriefPeriod;
   const status = row.status as BriefStatus;
-  const pColor = PERIOD_COLOR[period] ?? COLORS.grey;
 
   // Monthly per-client value reports are shareable as a public white-label link.
   const snapshot = row.dataSnapshot as Record<string, unknown> | null;
@@ -73,16 +74,7 @@ export default async function BriefDetailPage({
         title={row.headline}
         subtitle={
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <span
-              className="badge"
-              style={{
-                color: pColor,
-                background: tint(pColor, 0.12),
-                borderColor: tint(pColor, 0.28),
-              }}
-            >
-              {period}
-            </span>
+            <Pill tone={PERIOD_TONE[period] ?? "graphite"}>{period}</Pill>
             {row.scope} · {formatLondonDate(row.periodStart)} · generated{" "}
             {formatLondonTime(row.createdAt)}
           </span>
@@ -126,12 +118,13 @@ export default async function BriefDetailPage({
                 alignItems: "center",
                 gap: 8,
                 padding: "13px 18px",
-                borderBottom: "1px solid var(--border)",
+                borderRadius: "var(--radius-card) var(--radius-card) 0 0",
+                background: "var(--bg-well)",
               }}
             >
               <span
                 className="dot"
-                style={{ width: 7, height: 7, background: COLORS.green }}
+                style={{ width: 7, height: 7, background: "var(--green)" }}
                 aria-hidden
               />
               <h3 style={{ fontSize: 13.5, fontWeight: 620 }}>WhatsApp message</h3>

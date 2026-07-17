@@ -187,11 +187,10 @@ export function StepIntake({
           role="alert"
           style={{
             padding: "11px 13px",
-            borderRadius: "var(--radius-sm)",
+            borderRadius: "var(--radius-tile)",
             fontSize: 13,
             color: COLORS.amber,
-            background: tint(COLORS.amber, 0.1),
-            border: `1px solid ${tint(COLORS.amber, 0.3)}`,
+            background: tint(COLORS.amber, 0.14),
           }}
         >
           {AUTH_BANNER}

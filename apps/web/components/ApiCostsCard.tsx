@@ -60,7 +60,10 @@ export function ApiCostsCard({
 
   if (state.status === "error") {
     return (
-      <section className="card" style={{ padding: 20, borderStyle: "dashed" }}>
+      <section
+        className="card"
+        style={{ padding: 20, border: "1px dashed var(--border-2)" }}
+      >
         <div style={{ fontSize: 14, fontWeight: 600 }}>API costs</div>
         <div className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>
           Cost tracking appears once this month&apos;s agent-cost events and OS
@@ -91,7 +94,7 @@ export function ApiCostsCard({
       <div
         style={{
           fontSize: 30,
-          fontWeight: 700,
+          fontWeight: 660,
           letterSpacing: "-0.02em",
           marginTop: 10,
           color: "var(--text)",
@@ -122,9 +125,9 @@ function Cell({ label, value, tone }: { label: string; value: string; tone: stri
   return (
     <div
       style={{
-        background: "var(--card-2)",
-        border: `1px solid ${tint(tone, 0.26)}`,
-        borderRadius: "var(--radius-sm)",
+        background: tint(tone, 0.12),
+        border: "none",
+        borderRadius: "var(--radius-tile)",
         padding: "7px 11px",
         minWidth: 120,
       }}

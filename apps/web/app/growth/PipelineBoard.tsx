@@ -1,18 +1,20 @@
 "use client";
 
-import { COLORS, tint } from "../../components/ui";
+import { Pill } from "../../components/system/Pill";
+import type { SquircleTone } from "../../components/system/tokens";
 import { formatPence, formatLondonDate } from "../../lib/format";
 import type { PipelineItem } from "../../components/growth-types";
 
-function confidenceColor(c: string): string {
+/** RECIPE §3: confidence reads as a tinted pill, not a bespoke hex badge. */
+function confidenceTone(c: string): SquircleTone {
   switch (c) {
     case "high":
-      return COLORS.green;
+      return "mint";
     case "med":
     case "medium":
-      return COLORS.amber;
+      return "butter";
     default:
-      return COLORS.grey;
+      return "rose";
   }
 }
 
@@ -40,7 +42,8 @@ export function PipelineBoard({
       <div
         style={{
           padding: "14px 18px",
-          borderBottom: "1px solid var(--border)",
+          borderRadius: "var(--radius-card) var(--radius-card) 0 0",
+          background: "var(--bg-well)",
           display: "flex",
           alignItems: "baseline",
           justifyContent: "space-between",
@@ -66,17 +69,18 @@ export function PipelineBoard({
           </span>
         </div>
       ) : (
-        <div style={{ display: "grid", gap: 0 }}>
+        <div style={{ display: "grid", gap: 2, padding: "6px 6px" }}>
           {items.map((it, i) => {
-            const tone = confidenceColor(it.confidence);
+            const tone = confidenceTone(it.confidence);
             const b = busy[it.id];
             const reviewed = it.status === "reviewed";
             return (
               <article
                 key={it.id}
                 style={{
-                  padding: "14px 18px",
-                  borderTop: i === 0 ? "none" : "1px solid var(--border)",
+                  padding: "12px 12px",
+                  borderRadius: "var(--radius-tile)",
+                  background: i % 2 === 1 ? "var(--bg-well)" : "transparent",
                   display: "grid",
                   gap: 8,
                 }}
@@ -96,28 +100,8 @@ export function PipelineBoard({
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flex: "none" }}>
-                    {reviewed && (
-                      <span
-                        className="badge"
-                        style={{
-                          color: COLORS.blue,
-                          background: tint(COLORS.blue, 0.12),
-                          borderColor: tint(COLORS.blue, 0.28),
-                        }}
-                      >
-                        reviewed
-                      </span>
-                    )}
-                    <span
-                      className="badge"
-                      style={{
-                        color: tone,
-                        background: tint(tone, 0.12),
-                        borderColor: tint(tone, 0.28),
-                      }}
-                    >
-                      {it.confidence}
-                    </span>
+                    {reviewed && <Pill tone="sky">reviewed</Pill>}
+                    <Pill tone={tone}>{it.confidence}</Pill>
                   </div>
                 </div>
 
@@ -142,14 +126,9 @@ export function PipelineBoard({
                 <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                   <button
                     type="button"
-                    className="btn btn-sm"
+                    className="btn btn-sm btn-primary"
                     disabled={Boolean(b)}
                     onClick={() => onConvert(it.id)}
-                    style={{
-                      color: "var(--bg)",
-                      background: COLORS.green,
-                      borderColor: COLORS.green,
-                    }}
                   >
                     {b === "convert" ? "Converting…" : "Convert to proposal"}
                   </button>

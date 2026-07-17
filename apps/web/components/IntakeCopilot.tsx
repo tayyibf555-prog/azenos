@@ -300,7 +300,6 @@ export function IntakeCopilot({
       <div
         style={{
           padding: "12px 14px",
-          borderBottom: "1px solid var(--border)",
           fontSize: 13,
           fontWeight: 600,
         }}
@@ -346,7 +345,6 @@ export function IntakeCopilot({
 
       <div
         style={{
-          borderTop: "1px solid var(--border)",
           padding: 10,
           display: "grid",
           gap: 6,
@@ -444,11 +442,10 @@ function Bubble({ role, text }: { role: "user" | "assistant"; text: string }) {
         alignSelf: isUser ? "flex-end" : "flex-start",
         maxWidth: "85%",
         padding: "8px 11px",
-        borderRadius: 10,
+        borderRadius: "var(--radius-tile)",
         fontSize: 13,
         lineHeight: 1.5,
-        background: isUser ? tint(COLORS.blue, 0.14) : "var(--card-2)",
-        border: `1px solid ${isUser ? tint(COLORS.blue, 0.28) : "var(--border)"}`,
+        background: isUser ? tint(COLORS.blue, 0.14) : "var(--bg-well)",
         color: "var(--text)",
       }}
     >

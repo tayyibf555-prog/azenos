@@ -1,42 +1,40 @@
-import { COLORS, tint } from "./ui";
+import { Pill } from "./system/Pill";
+import type { SquircleTone } from "./system/tokens";
 import type { BriefStatus } from "./brief-types";
 
-/** One coloured channel chip: filled = delivered, hollow = not sent. */
+/** RECIPE §3: tinted pill per channel — filled tone = delivered, quiet gray-well = not sent. No border, no bespoke hex. */
 function Chip({
   label,
-  color,
   on,
+  tone,
   title,
 }: {
   label: string;
-  color: string;
   on: boolean;
+  tone: SquircleTone;
   title?: string;
 }) {
   return (
-    <span
-      className="badge"
-      title={title}
-      style={{
-        color: on ? color : "var(--text-3)",
-        background: on ? tint(color, 0.12) : "transparent",
-        borderColor: on ? tint(color, 0.28) : "var(--border)",
-      }}
-    >
-      <span
-        className="dot"
-        style={{ width: 6, height: 6, background: on ? color : "var(--text-3)" }}
-        aria-hidden
-      />
-      {label}
+    <span title={title}>
+      {on ? (
+        <Pill tone={tone}>
+          <span className="dot" style={{ width: 6, height: 6, background: "currentColor" }} aria-hidden />
+          {label}
+        </Pill>
+      ) : (
+        <Pill>
+          <span className="dot" style={{ width: 6, height: 6, background: "var(--text-3)" }} aria-hidden />
+          {label}
+        </Pill>
+      )}
     </span>
   );
 }
 
-const STATUS_COLOR: Record<BriefStatus, string> = {
-  generated: COLORS.grey,
-  sent: COLORS.green,
-  failed: COLORS.red,
+const STATUS_TONE: Record<BriefStatus, SquircleTone> = {
+  generated: "graphite",
+  sent: "mint",
+  failed: "rose",
 };
 
 /**
@@ -54,30 +52,18 @@ export function DeliveryChips({
   sentWhatsappAt: string | null;
   showStatus?: boolean;
 }) {
-  const statusColor = STATUS_COLOR[status] ?? COLORS.grey;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-      {showStatus && (
-        <span
-          className="badge"
-          style={{
-            color: statusColor,
-            background: tint(statusColor, 0.12),
-            borderColor: tint(statusColor, 0.28),
-          }}
-        >
-          {status}
-        </span>
-      )}
+      {showStatus && <Pill tone={STATUS_TONE[status] ?? "graphite"}>{status}</Pill>}
       <Chip
         label="Email"
-        color={COLORS.blue}
+        tone="sky"
         on={Boolean(sentEmailAt)}
         title={sentEmailAt ? `Emailed ${sentEmailAt}` : "Email not sent"}
       />
       <Chip
         label="WhatsApp"
-        color={COLORS.green}
+        tone="mint"
         on={Boolean(sentWhatsappAt)}
         title={sentWhatsappAt ? `WhatsApp sent ${sentWhatsappAt}` : "WhatsApp not sent"}
       />

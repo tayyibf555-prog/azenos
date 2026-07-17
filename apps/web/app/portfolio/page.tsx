@@ -4,17 +4,17 @@ import { StatGrid } from "../../components/analytics/StatGrid";
 import { StatTile } from "../../components/analytics/StatTile";
 import { ExpandableChart } from "../../components/analytics/ExpandableChart";
 import { PortfolioQuadrant, type QuadrantPoint } from "../../components/portfolio/PortfolioQuadrant";
-import { COLORS, tint } from "../../components/ui";
+import { Pill, type SquircleTone } from "../../components/system";
 import { formatPence } from "../../lib/format";
 import { getPortfolio, type PortfolioResult } from "../../lib/server/portfolio";
 import { requireOrgId } from "../../lib/server/org";
 
 export const dynamic = "force-dynamic";
 
-const HEALTH_LABEL: Record<string, { label: string; color: string }> = {
-  green: { label: "On track", color: COLORS.green },
-  amber: { label: "Watch", color: COLORS.amber },
-  red: { label: "At risk", color: COLORS.red },
+const HEALTH_LABEL: Record<string, { label: string; tone: SquircleTone }> = {
+  green: { label: "On track", tone: "mint" },
+  amber: { label: "Watch", tone: "butter" },
+  red: { label: "At risk", tone: "rose" },
 };
 
 /**
@@ -141,7 +141,7 @@ export default async function PortfolioPage() {
               </span>
             </div>
             <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-              <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", fontSize: 12.5 }}>
+              <table className="table" style={{ width: "100%", minWidth: 640, fontSize: 12.5 }}>
                 <thead>
                   <tr>
                     {["Project", "Client", "Health", "Cost MTD", "Value MTD", "ROI"].map((h, i) => (
@@ -165,7 +165,7 @@ export default async function PortfolioPage() {
                   {data.rows.map((row) => {
                     const health = HEALTH_LABEL[row.health] ?? HEALTH_LABEL.green!;
                     return (
-                      <tr key={row.projectId} style={{ borderTop: "1px solid var(--border)" }}>
+                      <tr key={row.projectId}>
                         <td style={{ padding: "9px 10px", whiteSpace: "nowrap" }}>
                           <Link href={`/projects/${row.projectId}`} style={{ color: "var(--text)" }}>
                             {row.projectName}
@@ -175,17 +175,7 @@ export default async function PortfolioPage() {
                           {row.clientName}
                         </td>
                         <td style={{ padding: "9px 10px", whiteSpace: "nowrap" }}>
-                          <span
-                            className="badge"
-                            style={{
-                              color: health.color,
-                              background: tint(health.color, 0.12),
-                              borderColor: tint(health.color, 0.28),
-                              fontSize: 11,
-                            }}
-                          >
-                            {health.label}
-                          </span>
+                          <Pill tone={health.tone}>{health.label}</Pill>
                         </td>
                         <td className="tnum" style={{ padding: "9px 10px", textAlign: "right", whiteSpace: "nowrap" }}>
                           {formatPence(row.costPence)}

@@ -326,7 +326,6 @@ function FragmentRow({
             style={{
               color,
               background: tint(color, 0.12),
-              borderColor: tint(color, 0.26),
             }}
           >
             {event.type}

@@ -1,6 +1,8 @@
-import { healthColor, tint } from "./ui";
+import { TINTS, healthTone } from "./system";
 
-/** Project health indicator — a coloured dot, optionally labelled. */
+/** Project health indicator — a coloured dot, optionally labelled. Uses the
+ * §2 tinted-container palette (mint/butter/rose) so it reads as the same
+ * health language as the grid, badges and stat cards. */
 export function HealthDot({
   health,
   showLabel = false,
@@ -8,7 +10,7 @@ export function HealthDot({
   health: string;
   showLabel?: boolean;
 }) {
-  const color = healthColor(health);
+  const t = TINTS[healthTone(health)];
   return (
     <span
       style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
@@ -16,11 +18,11 @@ export function HealthDot({
     >
       <span
         className="dot"
-        style={{ background: color, boxShadow: `0 0 0 3px ${tint(color, 0.16)}` }}
+        style={{ background: t.fg, boxShadow: `0 0 0 3px ${t.bg}` }}
         aria-hidden
       />
       {showLabel && (
-        <span style={{ color, fontSize: 12, fontWeight: 550 }}>{health}</span>
+        <span style={{ color: t.fg, fontSize: 12, fontWeight: 550 }}>{health}</span>
       )}
     </span>
   );

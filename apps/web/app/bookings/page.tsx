@@ -7,7 +7,8 @@ import {
 } from "../../lib/server/bookings";
 import { PageHeader } from "../../components/PageHeader";
 import { StatCard } from "../../components/StatCard";
-import { COLORS, humanize, tint } from "../../components/ui";
+import { Pill, TINTS, type SquircleTone } from "../../components/system";
+import { humanize } from "../../components/ui";
 import { formatLondonTime } from "../../lib/format";
 import { requireOrgId } from "../../lib/server/org";
 import { londonDayUTC } from "@azen/db";
@@ -78,19 +79,19 @@ export default async function BookingsPage() {
             label="Show rate"
             value={<span className="tnum">{pct(agency.rates.showRate)}</span>}
             sub={`${agency.window.completed}/${agency.rates.resolved} resolved`}
-            accent={COLORS.green}
+            accent="var(--green)"
           />
           <StatCard
             label="No-show rate"
             value={<span className="tnum">{pct(agency.rates.noShowRate)}</span>}
             sub={`${agency.window.noShow} no-shows`}
-            accent={agency.window.noShow > 0 ? COLORS.amber : undefined}
+            accent={agency.window.noShow > 0 ? "var(--amber)" : undefined}
           />
           <StatCard
             label="Cancel rate"
             value={<span className="tnum">{pct(agency.rates.cancelRate)}</span>}
             sub={`${agency.window.cancelled} cancelled`}
-            accent={agency.window.cancelled > 0 ? COLORS.red : undefined}
+            accent={agency.window.cancelled > 0 ? "var(--red)" : undefined}
           />
         </div>
       </section>
@@ -106,12 +107,7 @@ export default async function BookingsPage() {
       >
         {/* ── Source of booked calls ──────────────────────────────────── */}
         <section className="card" style={{ padding: 0 }}>
-          <div
-            style={{
-              padding: "14px 18px",
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
+          <div style={{ padding: "14px 18px 8px" }}>
             <h3 style={{ fontSize: 14, fontWeight: 620 }}>Source of booked calls</h3>
             <span className="faint" style={{ fontSize: 12 }}>
               Where the agency&apos;s calls came from · {agency.window.total} in
@@ -123,7 +119,7 @@ export default async function BookingsPage() {
               <span className="empty-title">No calls in this window</span>
             </div>
           ) : (
-            <div style={{ padding: "14px 18px", display: "grid", gap: 10 }}>
+            <div style={{ padding: "6px 18px 16px", display: "grid", gap: 10 }}>
               {agency.sources.map((s) => {
                 const max = agency.sources[0]?.count || 1;
                 return (
@@ -146,7 +142,7 @@ export default async function BookingsPage() {
                         flex: 1,
                         height: 8,
                         borderRadius: 4,
-                        background: "var(--card-2)",
+                        background: "var(--bg-well)",
                         overflow: "hidden",
                       }}
                     >
@@ -154,8 +150,7 @@ export default async function BookingsPage() {
                         style={{
                           width: `${(s.count / max) * 100}%`,
                           height: "100%",
-                          background: COLORS.blue,
-                          opacity: 0.85,
+                          background: TINTS.sky.fg,
                         }}
                       />
                     </div>
@@ -179,42 +174,37 @@ export default async function BookingsPage() {
 
         {/* ── Discovery → client conversion funnel ────────────────────── */}
         <section className="card" style={{ padding: 0 }}>
-          <div
-            style={{
-              padding: "14px 18px",
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
+          <div style={{ padding: "14px 18px 8px" }}>
             <h3 style={{ fontSize: 14, fontWeight: 620 }}>Discovery → client conversion</h3>
             <span className="faint" style={{ fontSize: 12 }}>
               Discovery calls that became active clients ·{" "}
               {pct(agency.conversion.rate)} converted
             </span>
           </div>
-          <div style={{ padding: "14px 18px", display: "grid", gap: 9 }}>
+          <div style={{ padding: "6px 18px 16px", display: "grid", gap: 9 }}>
             <FunnelRow
               label="Discovery booked"
               value={agency.conversion.discoveryBooked}
               max={agency.conversion.discoveryBooked}
-              color={COLORS.blue}
+              tone="graphite"
             />
             <FunnelRow
               label="Completed"
               value={agency.conversion.discoveryCompleted}
               max={agency.conversion.discoveryBooked}
-              color={COLORS.teal}
+              tone="sky"
             />
             <FunnelRow
               label="Linked to a client"
               value={agency.conversion.linkedToClient}
               max={agency.conversion.discoveryBooked}
-              color={COLORS.violet}
+              tone="lavender"
             />
             <FunnelRow
               label="Client now active"
               value={agency.conversion.convertedToActive}
               max={agency.conversion.discoveryBooked}
-              color={COLORS.green}
+              tone="mint"
             />
           </div>
         </section>
@@ -224,8 +214,7 @@ export default async function BookingsPage() {
       <section className="card" style={{ padding: 0, marginBottom: 26 }}>
         <div
           style={{
-            padding: "16px 18px",
-            borderBottom: "1px solid var(--border)",
+            padding: "16px 18px 12px",
             display: "flex",
             alignItems: "baseline",
             justifyContent: "space-between",
@@ -322,12 +311,7 @@ export default async function BookingsPage() {
 
       {/* ── Upcoming agency calls ─────────────────────────────────────── */}
       <section className="card" style={{ padding: 0 }}>
-        <div
-          style={{
-            padding: "14px 18px",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
+        <div style={{ padding: "14px 18px 8px" }}>
           <h3 style={{ fontSize: 14, fontWeight: 620 }}>Upcoming agency calls</h3>
         </div>
         {agency.upcoming.length === 0 ? (
@@ -354,23 +338,14 @@ export default async function BookingsPage() {
                     (b.invitee && typeof b.invitee["name"] === "string"
                       ? (b.invitee["name"] as string)
                       : null) ?? "—";
-                  const cat = KIND_COLOR[b.kind] ?? COLORS.blue;
+                  const tone = KIND_TONE[b.kind] ?? "graphite";
                   return (
                     <tr key={b.id}>
                       <td className="mono tnum" style={{ fontSize: 12.5 }}>
                         {formatLondonTime(b.startsAt)}
                       </td>
                       <td>
-                        <span
-                          className="badge"
-                          style={{
-                            color: cat,
-                            background: tint(cat, 0.13),
-                            borderColor: tint(cat, 0.28),
-                          }}
-                        >
-                          {humanize(b.kind)}
-                        </span>
+                        <Pill tone={tone}>{humanize(b.kind)}</Pill>
                       </td>
                       <td>{name}</td>
                       <td className="muted" style={{ textTransform: "capitalize" }}>
@@ -388,22 +363,22 @@ export default async function BookingsPage() {
   );
 }
 
-const KIND_COLOR: Record<string, string> = {
-  discovery: COLORS.blue,
-  kickoff: COLORS.violet,
-  review: COLORS.teal,
+const KIND_TONE: Record<string, SquircleTone> = {
+  discovery: "sky",
+  kickoff: "lavender",
+  review: "mint",
 };
 
 function FunnelRow({
   label,
   value,
   max,
-  color,
+  tone,
 }: {
   label: string;
   value: number;
   max: number;
-  color: string;
+  tone: SquircleTone;
 }) {
   const width = max > 0 ? (value / max) * 100 : 0;
   return (
@@ -414,7 +389,7 @@ function FunnelRow({
           flex: 1,
           height: 18,
           borderRadius: 5,
-          background: "var(--card-2)",
+          background: "var(--bg-well)",
           overflow: "hidden",
         }}
       >
@@ -422,7 +397,7 @@ function FunnelRow({
           style={{
             width: `${width}%`,
             height: "100%",
-            background: tint(color, 0.85),
+            background: TINTS[tone].fg,
             transition: "width .2s",
           }}
         />

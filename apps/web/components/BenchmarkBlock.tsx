@@ -16,8 +16,9 @@ import { COLORS, tint } from "./ui";
  *
  * Graceful degradation is the whole contract of the slot: `data === null`
  * (no industry / below the anonymity floor / no signal) renders NOTHING, so the
- * report and Client 360 simply don't show the block. Apple theme: calm glass,
- * hairline track, royal for the client's marker + green only for "ahead".
+ * report and Client 360 simply don't show the block. RECIPE §2: borderless
+ * --bg-well track (contrast, not a hairline), royal-soft accent for the
+ * client's marker + green only for "ahead".
  */
 
 function formatValue(value: number, unit: BenchmarkUnit): string {
@@ -81,14 +82,15 @@ function BarRow({ bar }: { bar: BenchmarkBar }) {
         </span>
       </div>
 
-      {/* Track: peer p25→p75 band, median tick, the client's marker. */}
+      {/* Track: peer p25→p75 band, median tick, the client's marker.
+          RECIPE T1: separation is contrast, not a hairline — the track sits
+          on the deeper --bg-well fill so no border is needed. */}
       <div
         style={{
           position: "relative",
           height: 10,
           borderRadius: 999,
-          background: "var(--glass)",
-          border: "1px solid var(--glass-border)",
+          background: "var(--bg-well)",
         }}
       >
         <div

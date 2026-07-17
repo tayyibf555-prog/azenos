@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DeliveryChips } from "./DeliveryChips";
-import { COLORS, tint } from "./ui";
+import { Pill } from "./system/Pill";
+import type { SquircleTone } from "./system/tokens";
 import type { BriefPeriod, BriefStatus } from "./brief-types";
 
 /**
@@ -30,10 +31,11 @@ export interface BriefRow {
   sentWhatsappAt: string | null;
 }
 
-const PERIOD_COLOR: Record<string, string> = {
-  daily: COLORS.blue,
-  weekly: COLORS.violet,
-  monthly: COLORS.teal,
+/** RECIPE §3: brief cadence reads as a tinted pill, category = tone (matches the detail page). */
+const PERIOD_TONE: Record<string, SquircleTone> = {
+  daily: "sky",
+  weekly: "lavender",
+  monthly: "butter",
 };
 
 const DOC_LABEL: Record<string, string> = {
@@ -48,6 +50,7 @@ type ScopeFilter = "all" | "agency" | "project";
 const PERIODS: PeriodFilter[] = ["all", "daily", "weekly", "monthly"];
 const SCOPES: ScopeFilter[] = ["all", "agency", "project"];
 
+/** RECIPE §3 pill mandate: content-area filter — black active pill, quiet at rest. */
 function FilterButton({
   active,
   label,
@@ -60,15 +63,9 @@ function FilterButton({
   return (
     <button
       type="button"
-      className="badge"
+      className={active ? "tab tab-active" : "tab"}
       onClick={onClick}
-      style={{
-        cursor: "pointer",
-        textTransform: "capitalize",
-        color: active ? "var(--text)" : "var(--text-3)",
-        background: active ? tint(COLORS.blue, 0.14) : "transparent",
-        borderColor: active ? tint(COLORS.blue, 0.34) : "var(--border)",
-      }}
+      style={{ height: 26, padding: "0 12px", fontSize: 12, textTransform: "capitalize" }}
     >
       {label}
     </button>
@@ -161,7 +158,6 @@ export function BriefsBrowser({ rows }: { rows: BriefRow[] }) {
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {filtered.map((r) => {
-            const pColor = PERIOD_COLOR[r.period] ?? COLORS.grey;
             const docLabel = r.docType ? DOC_LABEL[r.docType] : undefined;
             return (
               <Link
@@ -178,33 +174,9 @@ export function BriefsBrowser({ rows }: { rows: BriefRow[] }) {
                     flexWrap: "wrap",
                   }}
                 >
-                  <span
-                    className="badge"
-                    style={{
-                      color: pColor,
-                      background: tint(pColor, 0.12),
-                      borderColor: tint(pColor, 0.28),
-                    }}
-                  >
-                    {r.period}
-                  </span>
-                  {docLabel && (
-                    <span
-                      className="badge"
-                      style={{
-                        color: COLORS.teal,
-                        background: tint(COLORS.teal, 0.1),
-                        borderColor: tint(COLORS.teal, 0.26),
-                      }}
-                    >
-                      {docLabel}
-                    </span>
-                  )}
-                  {r.clientName && (
-                    <span className="badge" style={{ color: "var(--text-2)" }}>
-                      {r.clientName}
-                    </span>
-                  )}
+                  <Pill tone={PERIOD_TONE[r.period] ?? "graphite"}>{r.period}</Pill>
+                  {docLabel && <Pill tone="sky">{docLabel}</Pill>}
+                  {r.clientName && <Pill>{r.clientName}</Pill>}
                   <span className="faint" style={{ fontSize: 12 }}>
                     {r.scope} · {r.periodStartLabel}
                   </span>

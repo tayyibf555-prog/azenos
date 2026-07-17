@@ -203,7 +203,7 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
               style={{
                 display: "flex",
                 height: 12,
-                borderRadius: 6,
+                borderRadius: "var(--radius-pill)",
                 overflow: "hidden",
                 background: "var(--card-2)",
               }}
@@ -240,7 +240,7 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
 
       {/* ── FAQ clusters ── */}
       <section className="card" style={{ padding: 0 }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>
             FAQ clusters{" "}
             <span className="faint" style={{ fontWeight: 400 }}>
@@ -262,7 +262,7 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
           </div>
         ) : (
           <div style={{ display: "grid" }}>
-            {data.topics.map((t, i) => {
+            {data.topics.map((t) => {
               const arrow = trendArrow(t.trend);
               const isOpen = open[t.id] === true;
               return (
@@ -270,7 +270,6 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
                   key={t.id}
                   style={{
                     padding: "14px 18px",
-                    borderTop: i === 0 ? "none" : "1px solid var(--border)",
                     display: "grid",
                     gap: 8,
                   }}
@@ -298,7 +297,6 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
                             style={{
                               color: COLORS.orange,
                               background: tint(COLORS.orange, 0.12),
-                              borderColor: tint(COLORS.orange, 0.28),
                             }}
                           >
                             automate
@@ -315,7 +313,6 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
                         flex: "none",
                         color: COLORS.blue,
                         background: tint(COLORS.blue, 0.12),
-                        borderColor: tint(COLORS.blue, 0.26),
                       }}
                     >
                       {t.confidence}
@@ -350,9 +347,8 @@ export function ConversationsTab({ projectId }: { projectId: string }) {
                               key={ex.eventId}
                               style={{
                                 padding: "10px 12px",
-                                borderRadius: 8,
-                                background: "var(--card-2)",
-                                border: "1px solid var(--border)",
+                                borderRadius: "var(--radius-tile)",
+                                background: "var(--bg-well)",
                                 display: "grid",
                                 gap: 4,
                               }}
@@ -403,7 +399,7 @@ function StatBox({
       <div
         style={{
           fontSize: 22,
-          fontWeight: 700,
+          fontWeight: 660,
           letterSpacing: "-0.02em",
           marginTop: 6,
           color: tone,

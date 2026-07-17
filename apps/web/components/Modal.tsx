@@ -69,7 +69,6 @@ export function Modal({
               justifyContent: "space-between",
               gap: 12,
               padding: "16px 18px",
-              borderBottom: "1px solid var(--border)",
             }}
           >
             <div style={{ fontSize: 15, fontWeight: 600 }}>{title}</div>

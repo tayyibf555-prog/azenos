@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import type { MouseEvent } from "react";
 import type { MetricUnit } from "../metrics-types";
 import { tint } from "../ui";
@@ -58,7 +58,6 @@ export function LineChart({
    */
   band?: BandPoint[] | null;
 }) {
-  const gradId = useId();
   const [hover, setHover] = useState<number | null>(null);
 
   if (points.length < 2) {
@@ -243,13 +242,6 @@ export function LineChart({
       onMouseMove={onMove}
       onMouseLeave={() => setHover(null)}
     >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.22} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-
       {/* gridlines + y labels */}
       {gridVals.map((v, i) => {
         const y = yFor(v);
@@ -310,8 +302,8 @@ export function LineChart({
         />
       )}
 
-      {/* primary series */}
-      {areaPath && <path d={areaPath} fill={`url(#${gradId})`} stroke="none" />}
+      {/* primary series — RECIPE §5: flat deep-hue wash, no gradient */}
+      {areaPath && <path d={areaPath} fill={color} fillOpacity={0.08} stroke="none" />}
       <path
         d={linePath}
         fill="none"

@@ -11,7 +11,8 @@ import { HealthDot } from "../../../components/HealthDot";
 import { PageHeader } from "../../../components/PageHeader";
 import { StatCard } from "../../../components/StatCard";
 import { StatusPill } from "../../../components/StatusPill";
-import { COLORS, humanize, tint } from "../../../components/ui";
+import { humanize } from "../../../components/ui";
+import { Pill, type SquircleTone } from "../../../components/system";
 import { formatLondonDate, formatLondonTime, formatPence } from "../../../lib/format";
 import { requireOrgId } from "../../../lib/server/org";
 import { isUuid } from "../../../lib/server/schemas";
@@ -20,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 function marginColor(margin: number | null): string {
   if (margin === null) return "var(--text)";
-  return margin >= 0 ? COLORS.green : COLORS.red;
+  return margin >= 0 ? "var(--green)" : "var(--red)";
 }
 
 export default async function ClientDetailPage({
@@ -170,7 +171,7 @@ export default async function ClientDetailPage({
           label="API cost (MTD)"
           value={<span className="tnum">{formatPence(detail.costThisMonthPence)}</span>}
           sub="attributed this month"
-          accent={detail.costThisMonthPence > 0 ? COLORS.amber : undefined}
+          accent={detail.costThisMonthPence > 0 ? "var(--amber)" : undefined}
         />
         <StatCard
           label="Payments"
@@ -420,7 +421,7 @@ export default async function ClientDetailPage({
                       ? "—"
                       : `${(conversations.resolutionRate * 100).toFixed(0)}%`
                   }
-                  color={COLORS.green}
+                  color="var(--green)"
                 />
                 <MiniStat
                   label="Escalated"
@@ -429,7 +430,7 @@ export default async function ClientDetailPage({
                       ? "—"
                       : `${(conversations.escalationRate * 100).toFixed(0)}%`
                   }
-                  color={COLORS.amber}
+                  color="var(--amber)"
                 />
               </div>
               <div className="faint" style={{ fontSize: 12 }}>
@@ -445,31 +446,12 @@ export default async function ClientDetailPage({
           {feedbackOpen.length === 0 ? (
             <Empty title="No open feedback items" />
           ) : (
-            <ul style={{ listStyle: "none", display: "grid", gap: 1 }}>
+            <ul className="sys-list" style={{ listStyle: "none", padding: "6px 8px" }}>
               {feedbackOpen.map((f) => {
-                const c = FEEDBACK_KIND_COLOR[f.kind] ?? COLORS.grey;
+                const tone = FEEDBACK_KIND_TONE[f.kind] ?? "graphite";
                 return (
-                  <li
-                    key={f.kind}
-                    style={{
-                      padding: "11px 18px",
-                      borderTop: "1px solid var(--border)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <span
-                      className="badge"
-                      style={{
-                        color: c,
-                        background: tint(c, 0.13),
-                        borderColor: tint(c, 0.28),
-                        flex: "none",
-                      }}
-                    >
-                      {humanize(f.kind)}
-                    </span>
+                  <li key={f.kind} className="sys-listrow">
+                    <Pill tone={tone}>{humanize(f.kind)}</Pill>
                     <span style={{ flex: 1 }} />
                     <span className="mono tnum" style={{ fontSize: 13, fontWeight: 600 }}>
                       {f.count.toLocaleString("en-GB")}
@@ -496,31 +478,12 @@ export default async function ClientDetailPage({
           {insights.length === 0 ? (
             <Empty title="No insights yet" hint="The Opportunity Scout fills this in Phase 6." />
           ) : (
-            <ul style={{ listStyle: "none", display: "grid", gap: 1 }}>
+            <ul className="sys-list" style={{ listStyle: "none", padding: "6px 8px" }}>
               {insights.slice(0, 12).map((i) => {
-                const c = KIND_COLOR[i.kind] ?? COLORS.grey;
+                const tone = KIND_TONE[i.kind] ?? "graphite";
                 return (
-                  <li
-                    key={i.id}
-                    style={{
-                      padding: "11px 18px",
-                      borderTop: "1px solid var(--border)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <span
-                      className="badge"
-                      style={{
-                        color: c,
-                        background: tint(c, 0.13),
-                        borderColor: tint(c, 0.28),
-                        flex: "none",
-                      }}
-                    >
-                      {humanize(i.kind)}
-                    </span>
+                  <li key={i.id} className="sys-listrow">
+                    <Pill tone={tone}>{humanize(i.kind)}</Pill>
                     <span style={{ flex: 1, fontSize: 13 }}>{i.title}</span>
                     {i.estimatedValuePence != null && (
                       <span className="mono faint tnum" style={{ fontSize: 12 }}>
@@ -538,18 +501,9 @@ export default async function ClientDetailPage({
           {upsells.length === 0 ? (
             <Empty title="No proposals yet" hint="The Upsell Engine writes these in Phase 6." />
           ) : (
-            <ul style={{ listStyle: "none", display: "grid", gap: 1 }}>
+            <ul className="sys-list" style={{ listStyle: "none", padding: "6px 8px" }}>
               {upsells.map((u) => (
-                <li
-                  key={u.id}
-                  style={{
-                    padding: "11px 18px",
-                    borderTop: "1px solid var(--border)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
+                <li key={u.id} className="sys-listrow">
                   <StatusPill status={u.status} />
                   <span style={{ flex: 1, fontSize: 13 }}>{u.title}</span>
                   {u.suggestedPricePence != null && (
@@ -572,21 +526,12 @@ export default async function ClientDetailPage({
         {recentBriefs.length === 0 ? (
           <Empty title="No briefs yet" hint="Daily/weekly/monthly briefs land here once generated." />
         ) : (
-          <ul style={{ listStyle: "none", display: "grid", gap: 1 }}>
+          <ul className="sys-list" style={{ listStyle: "none", padding: "6px 8px" }}>
             {recentBriefs.map((b) => (
-              <li
-                key={b.id}
-                style={{
-                  padding: "11px 18px",
-                  borderTop: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span className="badge" style={{ textTransform: "capitalize", flex: "none" }}>
-                  {b.period}
-                </span>
+              <li key={b.id} className="sys-listrow">
+                <Pill tone="graphite">
+                  <span style={{ textTransform: "capitalize" }}>{b.period}</span>
+                </Pill>
                 <span style={{ flex: 1, fontSize: 13 }}>
                   {b.headline}
                   {b.projectName && (
@@ -614,21 +559,21 @@ export default async function ClientDetailPage({
   );
 }
 
-const KIND_COLOR: Record<string, string> = {
-  automation_opportunity: COLORS.blue,
-  upsell: COLORS.violet,
-  risk: COLORS.red,
-  win: COLORS.green,
-  anomaly: COLORS.amber,
-  faq_cluster: COLORS.teal,
+const KIND_TONE: Record<string, SquircleTone> = {
+  automation_opportunity: "lavender",
+  upsell: "peach",
+  risk: "rose",
+  win: "mint",
+  anomaly: "butter",
+  faq_cluster: "sky",
 };
 
-const FEEDBACK_KIND_COLOR: Record<string, string> = {
-  bug: COLORS.red,
-  feature: COLORS.blue,
-  question: COLORS.teal,
-  praise: COLORS.green,
-  other: COLORS.grey,
+const FEEDBACK_KIND_TONE: Record<string, SquircleTone> = {
+  bug: "rose",
+  feature: "sky",
+  question: "butter",
+  praise: "mint",
+  other: "graphite",
 };
 
 function MiniStat({
@@ -668,7 +613,7 @@ function Section({
 }) {
   return (
     <section className="card" style={{ padding: 0, marginBottom: flush ? 0 : 26 }}>
-      <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ padding: "14px 18px 8px" }}>
         <h3 style={{ fontSize: 14, fontWeight: 620 }}>{title}</h3>
         {subtitle && (
           <span className="faint" style={{ fontSize: 12 }}>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ShareTokenRecord } from "../lib/server/share";
-import { COLORS, tint } from "./ui";
+import { Pill } from "./system/Pill";
 
 /**
  * Owner-side "Share report" affordance (§P8-REPORT). Creates / copies / revokes
@@ -155,26 +155,17 @@ export function ShareReportPanel({
           alignItems: "center",
           gap: 8,
           padding: "13px 18px",
-          borderBottom: "1px solid var(--border)",
+          borderRadius: "var(--radius-card) var(--radius-card) 0 0",
+          background: "var(--bg-well)",
         }}
       >
-        <span
-          className="dot"
-          style={{ width: 7, height: 7, background: COLORS.blue }}
-          aria-hidden
-        />
+        <span className="dot" style={{ width: 7, height: 7, background: "var(--text-2)" }} aria-hidden />
         <h3 style={{ fontSize: 13.5, fontWeight: 620 }}>Share with client</h3>
         {live && (
-          <span
-            className="badge tnum"
-            style={{
-              marginLeft: "auto",
-              color: COLORS.green,
-              background: tint(COLORS.green, 0.12),
-              borderColor: tint(COLORS.green, 0.28),
-            }}
-          >
-            {live.viewCount} view{live.viewCount === 1 ? "" : "s"}
+          <span className="tnum" style={{ marginLeft: "auto" }}>
+            <Pill tone="mint">
+              {live.viewCount} view{live.viewCount === 1 ? "" : "s"}
+            </Pill>
           </span>
         )}
       </div>
@@ -187,17 +178,14 @@ export function ShareReportPanel({
                 readOnly
                 value={liveUrl ?? `${shareUrl("")}••••••••••`}
                 onFocus={(e) => e.currentTarget.select()}
-                className="mono"
+                className="input mono"
                 aria-label="Share link"
                 style={{
                   flex: "1 1 240px",
                   minWidth: 0,
-                  padding: "8px 10px",
+                  height: 34,
                   fontSize: 12,
                   color: "var(--text-2)",
-                  background: "var(--input)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
                 }}
               />
               <button

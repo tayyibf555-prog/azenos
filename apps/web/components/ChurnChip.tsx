@@ -6,12 +6,12 @@
  */
 
 import type { ChurnBand } from "../lib/server/churn";
-import { COLORS, tint } from "./ui";
+import { TINTS, type SquircleTone } from "./system";
 
-const BAND_COLOR: Record<ChurnBand, string> = {
-  healthy: COLORS.green,
-  watch: COLORS.amber,
-  risk: COLORS.red,
+const BAND_TONE: Record<ChurnBand, SquircleTone> = {
+  healthy: "mint",
+  watch: "butter",
+  risk: "rose",
 };
 
 const BAND_LABEL: Record<ChurnBand, string> = {
@@ -31,7 +31,7 @@ export function ChurnChip({
   reasons?: string[];
   size?: "sm" | "md";
 }) {
-  const color = BAND_COLOR[band];
+  const t = TINTS[BAND_TONE[band]];
   const title =
     reasons.length > 0
       ? `Churn risk ${score}/100 — ${reasons.join(" · ")}`
@@ -39,24 +39,24 @@ export function ChurnChip({
   const fontSize = size === "sm" ? 11.5 : 12.5;
   return (
     <span
-      className="badge"
       title={title}
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        color,
-        background: tint(color, 0.12),
-        borderColor: tint(color, 0.28),
+        height: 22,
+        padding: "0 10px",
+        borderRadius: "var(--radius-pill)",
+        color: t.fg,
+        background: t.bg,
         fontSize,
         fontWeight: 600,
         flex: "none",
       }}
     >
       <span
-        className="dot"
         aria-hidden
-        style={{ width: 6, height: 6, background: color }}
+        style={{ width: 6, height: 6, borderRadius: "50%", background: t.fg }}
       />
       <span className="tnum">{score}</span>
       <span style={{ fontWeight: 500, opacity: 0.85 }}>{BAND_LABEL[band]}</span>

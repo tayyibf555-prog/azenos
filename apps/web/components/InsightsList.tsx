@@ -79,8 +79,8 @@ function EvidenceDrilldown({ insight }: { insight: InsightItem }) {
         <div
           style={{
             marginTop: 8,
-            border: "1px solid var(--border)",
-            borderRadius: 8,
+            background: "var(--bg-well)",
+            borderRadius: "var(--radius-tile)",
             overflow: "hidden",
           }}
         >
@@ -92,7 +92,7 @@ function EvidenceDrilldown({ insight }: { insight: InsightItem }) {
               The cited events are no longer available.
             </div>
           ) : (
-            events.map((ev, i) => (
+            events.map((ev) => (
               <div
                 key={ev.id}
                 style={{
@@ -101,7 +101,6 @@ function EvidenceDrilldown({ insight }: { insight: InsightItem }) {
                   justifyContent: "space-between",
                   gap: 12,
                   padding: "7px 10px",
-                  borderTop: i === 0 ? "none" : "1px solid var(--border)",
                 }}
               >
                 <span className="mono" style={{ fontSize: 11.5 }}>
@@ -194,9 +193,7 @@ export function InsightsList({ projectId }: { projectId: string }) {
   if (state.insights.length === 0) {
     return (
       <section className="card" style={{ padding: 0 }}>
-        <div
-          style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}
-        >
+        <div style={{ padding: "14px 18px 4px" }}>
           <h3 style={{ fontSize: 14 }}>Insights</h3>
         </div>
         <div className="empty" style={{ padding: "30px 24px" }}>
@@ -211,9 +208,7 @@ export function InsightsList({ projectId }: { projectId: string }) {
 
   return (
     <section className="card" style={{ padding: 0 }}>
-      <div
-        style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)" }}
-      >
+      <div style={{ padding: "14px 18px 4px" }}>
         <h3 style={{ fontSize: 14 }}>
           Insights{" "}
           <span className="faint" style={{ fontWeight: 400 }}>
@@ -222,7 +217,7 @@ export function InsightsList({ projectId }: { projectId: string }) {
         </h3>
       </div>
       <div style={{ display: "grid", gap: 0 }}>
-        {state.insights.map((ins, i) => {
+        {state.insights.map((ins) => {
           const tone = confidenceColor(ins.confidence);
           const summary = evidenceSummary(ins.evidence);
           return (
@@ -230,7 +225,6 @@ export function InsightsList({ projectId }: { projectId: string }) {
               key={ins.id}
               style={{
                 padding: "14px 18px",
-                borderTop: i === 0 ? "none" : "1px solid var(--border)",
                 display: "grid",
                 gap: 8,
               }}
@@ -257,7 +251,6 @@ export function InsightsList({ projectId }: { projectId: string }) {
                     flex: "none",
                     color: tone,
                     background: tint(tone, 0.12),
-                    borderColor: tint(tone, 0.28),
                   }}
                 >
                   {ins.confidence}

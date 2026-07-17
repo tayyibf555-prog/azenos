@@ -6,7 +6,7 @@ import { GenerateBriefButton } from "../../components/GenerateBriefButton";
 import { PageHeader } from "../../components/PageHeader";
 import { StatCard } from "../../components/StatCard";
 import type { BriefPeriod, BriefStatus } from "../../components/brief-types";
-import { COLORS, tint } from "../../components/ui";
+import { TINTS } from "../../components/system/tokens";
 import { formatLondonDate, formatLondonTime } from "../../lib/format";
 import { requireOrgId } from "../../lib/server/org";
 
@@ -117,16 +117,17 @@ export default async function BriefsPage() {
       {dbError ? (
         <div
           className="card"
-          style={{
-            padding: 20,
-            borderColor: tint(COLORS.red, 0.3),
-            background: tint(COLORS.red, 0.05),
-          }}
+          style={{ padding: 20, background: TINTS.rose.bg }}
         >
-          <strong>Database not reachable.</strong>
+          <strong style={{ color: TINTS.rose.fg }}>Database not reachable.</strong>
           <pre
             className="codeblock"
-            style={{ marginTop: 12, color: "var(--red)", fontSize: 12 }}
+            style={{
+              marginTop: 12,
+              color: TINTS.rose.fg,
+              fontSize: 12,
+              background: TINTS.rose.pill,
+            }}
           >
             {dbError}
           </pre>
