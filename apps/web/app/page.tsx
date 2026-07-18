@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { and, count, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import {
   bookings,
@@ -12,24 +13,23 @@ import {
   projects,
   subscriptions,
 } from "@azen/db";
-import { Ticker } from "../components/Ticker";
-import { ProjectHealthTable } from "../components/ProjectHealthTable";
-import { OpenAnomaliesStat } from "../components/OpenAnomaliesStat";
 import { HealthAlertsCard } from "../components/HealthAlertsCard";
 import {
-  DataCard,
+  CommandCenterPulse,
+  type PulseData,
+  type PulseProject,
+} from "../components/CommandCenterPulse";
+import {
   EmptyState,
   EventChip,
   IconSquircle,
   List,
   ListRow,
-  MiniCalendar,
   PageShell,
   Pill,
-  StatCell,
-  StatRow,
   TopbarActions,
-  type CalendarEvent,
+  TINTS,
+  avatarTone,
   type SquircleTone,
 } from "../components/system";
 import { type TodayData } from "../components/TodayColumn";
@@ -87,6 +87,86 @@ async function loadOverview(orgId: string): Promise<Overview> {
     liveProjects: Number(pr?.v ?? 0),
     eventsTotal: Number(ev?.v ?? 0),
     clientBookingsThisMonth: Number(bk?.v ?? 0),
+  };
+}
+
+/**
+ * §5 portfolio pulse — the terminal-luxe reference's data. ONE org-scoped,
+ * read-only aggregate over the event spine grouped by project × London day for
+ * the last 60 London days. That single query feeds every element: per-project
+ * 30d-vs-prior-30d deltas (top strip), the combined daily-volume line, the
+ * events-share donut, the daily-consistency bars, growth %, conversations and
+ * the net-change chip. London boundaries via londonDayUTC (spec §13); same
+ * `sql` template style as the sibling loaders above.
+ */
+async function loadPulse(orgId: string, eventsTotal: number, mrrPence: number): Promise<PulseData> {
+  const since60 = londonDayUTC(60);
+  const dayExpr = sql<string>`((${events.occurredAt} AT TIME ZONE 'Europe/London')::date)::text`;
+  const commsExpr = sql<number>`count(*) filter (where split_part(${events.type}, '.', 1) in ('message', 'email', 'call', 'review'))`;
+
+  const [projectRows, volRows] = await Promise.all([
+    db
+      .select({ id: projects.id, name: projects.name, clientName: clients.name })
+      .from(projects)
+      .innerJoin(clients, eq(projects.clientId, clients.id))
+      .where(eq(projects.orgId, orgId)),
+    db
+      .select({
+        projectId: events.projectId,
+        day: dayExpr,
+        n: count(),
+        comms: commsExpr.mapWith(Number),
+      })
+      .from(events)
+      .where(and(eq(events.orgId, orgId), gte(events.occurredAt, since60)))
+      .groupBy(events.projectId, dayExpr),
+  ]);
+
+  // 60 London day keys, oldest → newest (index 59 = today). These match the
+  // SQL's `::date::text` output because event times sit inside the London day.
+  const dayKeys: string[] = [];
+  for (let i = 59; i >= 0; i--) dayKeys.push(londonDayUTC(i).toISOString().slice(0, 10));
+  const last30 = dayKeys.slice(30);
+  const prev30 = dayKeys.slice(0, 30);
+  const last30Set = new Set(last30);
+
+  const byKey = new Map<string, number>(); // `${projectId}|${day}` → count
+  const dayTotal = new Map<string, number>();
+  let conversations30 = 0;
+  for (const r of volRows) {
+    const pid = r.projectId ?? "__org__";
+    byKey.set(`${pid}|${r.day}`, r.n);
+    dayTotal.set(r.day, (dayTotal.get(r.day) ?? 0) + r.n);
+    if (last30Set.has(r.day)) conversations30 += r.comms;
+  }
+
+  const series60 = dayKeys.map((d) => dayTotal.get(d) ?? 0);
+
+  const pulseProjects: PulseProject[] = projectRows
+    .map((p) => {
+      const daily = last30.map((d) => byKey.get(`${p.id}|${d}`) ?? 0);
+      const cur = daily.reduce((a, b) => a + b, 0);
+      const prev = prev30.reduce((a, d) => a + (byKey.get(`${p.id}|${d}`) ?? 0), 0);
+      return {
+        id: p.id,
+        name: p.name,
+        clientName: p.clientName,
+        cur,
+        prev,
+        colorHex: TINTS[avatarTone(p.name)].fg,
+        daily,
+      };
+    })
+    .sort((a, b) => b.cur - a.cur);
+
+  return {
+    projects: pulseProjects,
+    seriesDaily: series60.slice(30),
+    seriesDays: last30,
+    series60,
+    eventsTotal,
+    conversations30,
+    mrrPence,
   };
 }
 
@@ -215,9 +295,22 @@ function hm(iso: string): string {
   return Number.isNaN(d.getTime()) ? "—" : londonHM.format(d);
 }
 
+/** Reflowed §5 rail panel — a hairline card whose header is the uppercase-mono
+ * kicker voice (the serif SectionHeader is dropped on this screen), with the
+ * rows themselves staying readable sans below it. */
+function MonoPanel({ kicker, children }: { kicker: string; children: ReactNode }) {
+  return (
+    <section className="cc-card" style={{ gap: 12 }}>
+      <span className="cc-kicker">{kicker}</span>
+      <div>{children}</div>
+    </section>
+  );
+}
+
 export default async function CommandCenter() {
   let overview: Overview | null = null;
   let today: TodayData | null = null;
+  let pulse: PulseData | null = null;
   let dbError: string | null = null;
   try {
     const orgId = await requireOrgId();
@@ -225,12 +318,10 @@ export default async function CommandCenter() {
       loadOverview(orgId),
       loadToday(orgId),
     ]);
+    pulse = await loadPulse(orgId, overview.eventsTotal, overview.mrrPence);
   } catch (err) {
     dbError = err instanceof Error ? err.message : String(err);
   }
-
-  const calendarEvents: CalendarEvent[] =
-    today?.calls.map((c) => ({ date: c.startsAt, tone: "mint" as const })) ?? [];
 
   const needsYouCount =
     (today?.newInsights.length ?? 0) + (today?.overduePayments.length ?? 0);
@@ -264,105 +355,64 @@ export default async function CommandCenter() {
           </pre>
         </div>
       ) : (
-        overview && (
+        overview &&
+        pulse && (
           <div style={{ display: "grid", gap: 14 }}>
-            {/* §5 one compact stat strip */}
-            <StatRow>
-              <StatCell
-                label="MRR"
-                value={formatPence(overview.mrrPence)}
-                hero
-              />
-              <StatCell
-                label="Active clients"
-                value={overview.activeClients.toLocaleString("en-GB")}
-              />
-              <StatCell
-                label="Live projects"
-                value={overview.liveProjects.toLocaleString("en-GB")}
-              />
-              <StatCell
-                label="Events in spine"
-                value={overview.eventsTotal.toLocaleString("en-GB")}
-              />
-              <StatCell
-                label="Appointments (month)"
-                value={overview.clientBookingsThisMonth.toLocaleString("en-GB")}
-              />
-              <OpenAnomaliesStat />
-            </StatRow>
+            {/* §5 the terminal-luxe pulse board (top strip · wide cells · chart
+                + donut · consistency bars) — all the agency's real spine data */}
+            <CommandCenterPulse data={pulse} />
 
-            {/* §5 2fr / 1fr dashboard grid */}
-            <div className="sys-dash-grid">
-              <div className="sys-col">
-                <DataCard
-                  title="Today — what needs you"
-                  caption="Insights to review and money to chase"
-                  icon="flag"
-                  tone="peach"
-                >
-                  {today && needsYouCount > 0 ? (
-                    <List>
-                      {today.newInsights.map((ins) => (
-                        <ListRow
-                          key={ins.id}
-                          href={`/projects/${ins.projectId}`}
-                          leading={
-                            <IconSquircle
-                              tone={CONFIDENCE_TONE[ins.confidence] ?? "graphite"}
-                              icon="bulb"
-                              size={28}
-                            />
-                          }
-                          primary={ins.title}
-                          secondary={`${humanize(ins.kind)} · ${ins.projectName}`}
-                          meta={
-                            <Pill tone={CONFIDENCE_TONE[ins.confidence] ?? "graphite"}>
-                              {ins.confidence}
-                            </Pill>
-                          }
-                        />
-                      ))}
-                      {today.overduePayments.map((p) => (
-                        <ListRow
-                          key={p.id}
-                          leading={<IconSquircle tone="rose" icon="pound" size={28} />}
-                          primary={p.clientName}
-                          secondary={`${humanize(p.kind)} · overdue`}
-                          meta={
-                            <span
-                              className="tnum"
-                              style={{ fontSize: 13, fontWeight: 600, color: "var(--red)" }}
-                            >
-                              {formatPence(p.amountPence)}
-                            </span>
-                          }
-                        />
-                      ))}
-                    </List>
-                  ) : (
-                    <EmptyState>Nothing needs you right now — you&apos;re clear.</EmptyState>
-                  )}
-                </DataCard>
+            {/* §5.1 reflowed rail — Today (wide) + Upcoming calls / Alerts. Mono
+                kicker headers; rows stay readable sans. Serif + MiniCalendar
+                dropped on this screen (owner reference has none). */}
+            <div className="cc-rail">
+              <MonoPanel kicker="Today · what needs you">
+                {today && needsYouCount > 0 ? (
+                  <List>
+                    {today.newInsights.map((ins) => (
+                      <ListRow
+                        key={ins.id}
+                        href={`/projects/${ins.projectId}`}
+                        leading={
+                          <IconSquircle
+                            tone={CONFIDENCE_TONE[ins.confidence] ?? "graphite"}
+                            icon="bulb"
+                            size={28}
+                          />
+                        }
+                        primary={ins.title}
+                        secondary={`${humanize(ins.kind)} · ${ins.projectName}`}
+                        meta={
+                          <Pill tone={CONFIDENCE_TONE[ins.confidence] ?? "graphite"}>
+                            {ins.confidence}
+                          </Pill>
+                        }
+                      />
+                    ))}
+                    {today.overduePayments.map((p) => (
+                      <ListRow
+                        key={p.id}
+                        leading={<IconSquircle tone="rose" icon="pound" size={28} />}
+                        primary={p.clientName}
+                        secondary={`${humanize(p.kind)} · overdue`}
+                        meta={
+                          <span
+                            className="tnum"
+                            style={{ fontSize: 13, fontWeight: 600, color: "var(--red)" }}
+                          >
+                            {formatPence(p.amountPence)}
+                          </span>
+                        }
+                      />
+                    ))}
+                  </List>
+                ) : (
+                  <EmptyState>Nothing needs you right now — you&apos;re clear.</EmptyState>
+                )}
+              </MonoPanel>
 
-                <DataCard
-                  title="Project health"
-                  caption="Live across every client system"
-                  icon="box"
-                  tone="sky"
-                >
-                  <ProjectHealthTable />
-                </DataCard>
-
-                <Ticker />
-              </div>
-
-              <div className="sys-col">
-                <DataCard title="Calendar" icon="calendar" tone="lavender">
-                  <MiniCalendar events={calendarEvents} />
-                </DataCard>
-
-                <DataCard title="Upcoming calls" icon="phone" tone="mint">
+              <div style={{ display: "grid", gap: 12 }}>
+                <MonoPanel kicker="Upcoming calls">
                   {today && today.calls.length > 0 ? (
                     <div style={{ display: "grid", gap: 8 }}>
                       {today.calls.map((c, i) => (
@@ -379,11 +429,11 @@ export default async function CommandCenter() {
                   ) : (
                     <EmptyState>No discovery, kickoff or review calls today.</EmptyState>
                   )}
-                </DataCard>
+                </MonoPanel>
 
-                <DataCard title="Alerts" icon="alert" tone="rose">
+                <MonoPanel kicker="Alerts">
                   <HealthAlertsCard />
-                </DataCard>
+                </MonoPanel>
               </div>
             </div>
           </div>
