@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Source_Serif_4 } from "next/font/google";
 import { AppFrame } from "../components/AppFrame";
-import { supabaseConfigured } from "../lib/supabase";
+import { localDemoMode } from "../lib/supabase";
 
 /**
  * Claude editorial seasoning — the serif display face. Source Serif 4 is the
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={serif.variable}>
       <body>
-        <AppFrame demo={!supabaseConfigured()}>{children}</AppFrame>
+        <AppFrame demo={localDemoMode()}>{children}</AppFrame>
       </body>
     </html>
   );

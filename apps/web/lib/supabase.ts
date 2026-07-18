@@ -11,6 +11,18 @@ export function supabaseConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
 }
 
+/**
+ * The amber "local demo mode" banner is only honest on a true local demo:
+ * Supabase auth unconfigured AND no database wired up. On the live deployment
+ * DATABASE_URL is set and auth is intentionally off (edge-protected, solo
+ * owner), so the banner would be misleading — show the normal chrome instead.
+ * This gates banner visibility ONLY; it does not touch the demo-auth path,
+ * which still keys off supabaseConfigured().
+ */
+export function localDemoMode(): boolean {
+  return !supabaseConfigured() && !process.env.DATABASE_URL;
+}
+
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   return createServerClient(
