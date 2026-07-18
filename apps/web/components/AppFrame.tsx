@@ -226,8 +226,8 @@ export function AppFrame({
               padding: "7px 32px",
               fontSize: 12.5,
               color: "var(--amber)",
-              background: "rgba(185, 138, 46, 0.09)",
-              borderBottom: "1px solid rgba(185, 138, 46, 0.22)",
+              background: "rgba(229, 193, 90, 0.09)",
+              borderBottom: "1px solid rgba(229, 193, 90, 0.22)",
             }}
           >
             <span

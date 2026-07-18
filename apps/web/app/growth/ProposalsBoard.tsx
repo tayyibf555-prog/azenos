@@ -264,7 +264,7 @@ function ProposalModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "rgba(0,0,0,0.55)",
         display: "grid",
         placeItems: "center",
         zIndex: 50,
@@ -284,7 +284,7 @@ function ProposalModal({
         <div
           style={{
             padding: "16px 20px",
-            boxShadow: "0 1px 2px rgba(20, 22, 26, 0.05)",
+            boxShadow: "0 1px 0 rgba(255, 255, 255, 0.06)",
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
@@ -436,7 +436,7 @@ function ProposalModal({
         <div
           style={{
             padding: "14px 20px",
-            boxShadow: "0 -1px 2px rgba(20, 22, 26, 0.05)",
+            boxShadow: "0 -1px 0 rgba(255, 255, 255, 0.06)",
             display: "flex",
             gap: 8,
             flexWrap: "wrap",

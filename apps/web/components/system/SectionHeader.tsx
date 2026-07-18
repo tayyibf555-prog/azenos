@@ -26,16 +26,19 @@ export function SectionHeader({
         display: "flex",
         alignItems: "center",
         gap: 10,
-        minHeight: 32,
+        minHeight: 34,
       }}
     >
       {icon ? <IconSquircle tone={tone} icon={icon} size={28} /> : null}
       <div style={{ display: "flex", alignItems: "baseline", gap: 9, minWidth: 0 }}>
+        {/* Claude editorial: section titles run the serif display face at 17px/600
+            — the identity moment. Caption beside it stays sentence-case sans. */}
         <h3
+          className="display-serif"
           style={{
-            fontSize: 15,
+            fontSize: 17,
             fontWeight: 600,
-            letterSpacing: "-0.01em",
+            letterSpacing: "-0.015em",
             color: "var(--text)",
           }}
         >

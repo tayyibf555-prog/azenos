@@ -19,8 +19,8 @@ import { COLORS, eventCategory, humanize, tint } from "./ui";
 
 const FLASH_CSS = `
 @keyframes intakeFlash {
-  0% { box-shadow: 0 0 0 2px rgba(122,162,247,0.55); background: rgba(122,162,247,0.12); }
-  100% { box-shadow: 0 0 0 0 rgba(122,162,247,0); background: transparent; }
+  0% { box-shadow: 0 0 0 2px rgba(125,149,242,0.55); background: rgba(125,149,242,0.12); }
+  100% { box-shadow: 0 0 0 0 rgba(125,149,242,0); background: transparent; }
 }
 .intake-flash { animation: intakeFlash 1.2s ease-out; border-radius: 8px; }
 @media (prefers-reduced-motion: reduce) { .intake-flash { animation: none; } }

@@ -16,22 +16,24 @@ export type SquircleTone =
   | "graphite";
 
 /**
- * RECIPE §2 pastel container tints. Each row: `bg` = the whole-card wash,
- * `fg` = the deep-hue text/icon, `pill` = the DEEPER wash for status/countdown
- * pills sitting inside the tinted card. The white icon holder is always #FFFFFF.
+ * DARK VARIANT container tints (RECIPE ## DARK VARIANT, owner-directed
+ * 2026-07-17). Each row: `bg` = the whole-card DEEP wash, `fg` = the BRIGHT
+ * text/icon, `pill` = the deeper wash for status/countdown pills inside the
+ * tinted card. The icon-holder square switches to #1C1C21 on dark (the bright
+ * fg icon fails AA on a white holder over a deep wash — see IconSquircle).
  * Exact values from the binding table — do NOT recompute via tint().
  */
 export const TINTS: Record<
   SquircleTone,
   { bg: string; fg: string; pill: string }
 > = {
-  lavender: { bg: "#E6E0F5", fg: "#4A3A82", pill: "#D6C9F0" }, // AI / agents / LLM
-  mint: { bg: "#D9F3E1", fg: "#1F7A43", pill: "#C3EBD0" }, // money-in / bookings / success
-  sky: { bg: "#DCECFA", fg: "#255E9E", pill: "#C7DFF5" }, // messages / views / sessions
-  peach: { bg: "#FFE8D4", fg: "#9E5320", pill: "#FBD9BE" }, // edits / pending / attention
-  rose: { bg: "#FDE0EC", fg: "#A83464", pill: "#F9CDDE" }, // errors / churn / failures
-  butter: { bg: "#FEF7D6", fg: "#8A6D1B", pill: "#F7EBB4" }, // scheduled / waiting / invoices
-  graphite: { bg: "#F0EEEC", fg: "#3A3A3C", pill: "#E4E1DE" }, // system / misc (neutral)
+  lavender: { bg: "#262040", fg: "#B4A8F5", pill: "#332B55" }, // AI / agents / LLM
+  mint: { bg: "#16301F", fg: "#7FD8A3", pill: "#1E402A" }, // money-in / bookings / success
+  sky: { bg: "#14283C", fg: "#8CC1F0", pill: "#1B3650" }, // messages / views / sessions
+  peach: { bg: "#38261A", fg: "#F0B285", pill: "#4A3222" }, // edits / pending / attention
+  rose: { bg: "#3A1F2A", fg: "#F2A3C0", pill: "#4C2938" }, // errors / churn / failures
+  butter: { bg: "#332C15", fg: "#E8D48A", pill: "#443B1D" }, // scheduled / waiting / invoices
+  graphite: { bg: "#232326", fg: "#B8B8BD", pill: "#2E2E33" }, // system / misc (neutral)
 };
 
 /** Ordered palette used to colour avatars deterministically by name. */

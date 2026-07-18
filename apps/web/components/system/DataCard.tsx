@@ -28,7 +28,7 @@ export function DataCard({
   return (
     <section
       className="card"
-      style={{ padding: 18, display: "grid", gap: title ? 14 : 0 }}
+      style={{ padding: 18, display: "grid", gap: title ? 16 : 0 }}
     >
       {title ? (
         <SectionHeader

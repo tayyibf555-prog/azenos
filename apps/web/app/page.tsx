@@ -246,8 +246,8 @@ export default async function CommandCenter() {
           className="card"
           style={{
             padding: 20,
-            border: "1px solid rgba(168,52,100,0.3)",
-            background: "rgba(168,52,100,0.06)",
+            border: "1px solid rgba(240,112,103,0.3)",
+            background: "rgba(240,112,103,0.08)",
           }}
         >
           <strong>Database not reachable.</strong>

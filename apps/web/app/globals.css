@@ -1,76 +1,85 @@
-/* Azen OS — "Soft Consumer Light" (lead-pinned 2026-07-17, supersedes the v2
-   Apple-Soft-Light). Binding source: docs/design/RECIPE.md (74-brand match
-   against the owner's reference). Warm-neutral #F1F2F4 canvas, PURE-white
-   BORDERLESS cards separated by contrast + a whisper double-shadow (Wise /
-   Starbucks T1), ink #14140F as the ONE strong fill, warm-charcoal text ladder
-   (Notion), the six pastel tints washed over WHOLE containers (Notion T4), and
-   a pill-or-large radius commitment (Miro/Figma T2). See docs/design/RECIPE.md
-   §2 for the exact provenance of every value. Plain CSS. */
+/* Azen OS — "Soft Consumer Light · DARK VARIANT" (owner-directed 2026-07-17).
+   Binding source: docs/design/RECIPE.md ## DARK VARIANT. The STRUCTURE of the
+   owner-approved Soft-Light recipe is untouched (density, pill geometry, tinted
+   containers, numbers-first tiles, elevated-selection sidebar, radii 28/20/16/
+   pill); ONLY the surface palette flips: base #0B0B0D canvas, solid elevated
+   near-black cards (#131316) separated by a faint white hairline (the DARK
+   exception to RECIPE T1 — dark drop-shadows are invisible), ROYAL BLUE #3457D5
+   as the ONE strong selection/CTA fill, a near-white text ladder, the six tints
+   deepened to dark washes with bright fg, and the pill-or-large radius kept
+   (Miro/Figma T2). All colour flows through tokens. Plain CSS. */
 
 :root {
-  /* ── canvas: warm-neutral gray, never pure white (Wise T1) ────────────── */
-  --bg: #f1f2f4; /* reference canvas — warm neutral, NOT cold Apple #F2F2F7 */
-  --bg-2: #eaebee; /* deeper inset wells / section grooves / list zebra */
-  --bg-well: #eaebee; /* RECIPE §2 alias */
-  --panel: #ffffff;
+  /* ── DARK VARIANT (owner-directed 2026-07-17) — base #0B0B0D, BLUE accent.
+     Same STRUCTURE as "Soft Consumer Light" (density, pill geometry, tinted
+     containers, numbers-first tiles, elevated-selection sidebar, radii); only
+     the surface palette flips. See docs/design/RECIPE.md ## DARK VARIANT. ── */
 
-  /* ── surfaces — PURE white, BORDERLESS; separation = contrast + shadow ───
-     the --glass* keys are kept (markup references them) but carry the new
-     borderless light-surface values. No translucency on the light canvas. */
-  --glass: #ffffff;
-  --glass-2: #f1f2f4; /* subtle inset fill — tracks, tooltips, quiet chips */
-  --glass-hover: #ffffff; /* hover keeps white; the shadow does the lifting */
-  --glass-border: #edeceb; /* faint WARM hairline — kept ONLY for genuine
-                              structural dividers (topbar). Cards use none. */
+  /* ── canvas: the owner's near-black ─────────────────────────────────────── */
+  --bg: #0b0b0d; /* the owner's exact hex — page canvas */
+  --bg-2: #141417; /* deeper inset wells / section grooves / list zebra */
+  --bg-well: #141417; /* RECIPE §2 alias */
+  --panel: #131316; /* solid elevated surface — NO backdrop blur */
+
+  /* ── surfaces — solid elevated near-black, separated by a faint hairline ──
+     DARK-MODE EXCEPTION to RECIPE T1: dark drop-shadows are invisible, so the
+     hairline returns ON DARK ONLY. The --glass* keys are kept (markup
+     references them) but carry solid dark-surface values — no translucency. */
+  --glass: #131316;
+  --glass-2: #17171b; /* subtle inset fill — tracks, tooltips, quiet chips, wells */
+  --glass-hover: #1a1a1f; /* hover lifts to a lighter elevated surface */
+  --glass-border: rgba(255, 255, 255, 0.07); /* the dark hairline (T1 exception) */
   --glass-rim: transparent;
   --blur: 0px;
   --blur-lg: 0px;
 
-  /* Starbucks whisper-double borderless-card shadow (RECIPE §2, softer/wider
-     for dashboard scale) — the depth cue that replaces the hairline. */
-  --shadow-card: 0 0 0.5px rgba(20, 22, 26, 0.06), 0 1px 2px rgba(20, 22, 26, 0.05),
-    0 6px 16px -6px rgba(20, 22, 26, 0.06);
-  --shadow-hover: 0 0 0.5px rgba(20, 22, 26, 0.08), 0 2px 4px rgba(20, 22, 26, 0.06),
-    0 12px 28px -8px rgba(20, 22, 26, 0.1);
-  --shadow-pop: 0 8px 20px -6px rgba(20, 22, 26, 0.1),
-    0 30px 60px -20px rgba(20, 22, 26, 0.22); /* palette / modal */
+  /* Hairline-ring card separation (RECIPE T1 dark exception): a faint 1px
+     rgba(255,255,255,.07) ring + a subtle top-light inner highlight replaces
+     the invisible dark drop-shadow. --shadow-pop keeps a real dark glow for
+     modals/palette floating over the 0.55 black scrim. */
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.11),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 20px 50px -12px rgba(0, 0, 0, 0.7); /* palette / modal */
 
   /* legacy token aliases — existing markup references these names */
   --card: var(--glass);
   --card-2: var(--glass-2);
   --card-hover: var(--glass-hover);
-  --card-border: none; /* T1: cards carry NO hairline */
-  --input: #ffffff;
+  --card-border: none; /* cards carry NO literal border — the hairline lives in --shadow-card */
+  --input: #17171b;
   --border: var(--glass-border);
-  --border-2: #e3e2e0;
-  --border-3: #d5d4d1;
+  --border-2: rgba(255, 255, 255, 0.1);
+  --border-3: rgba(255, 255, 255, 0.14);
 
-  /* ── text: Notion warm-charcoal ladder (friendlier than cold Apple grays) ─ */
-  --text: #37352f; /* Notion charcoal — primary */
-  --text-2: #6b6a65; /* secondary — labels, axis/chart labels */
-  --text-3: #9b9a94; /* tertiary — quiet captions, placeholders */
+  /* ── text: near-white ladder on near-black ──────────────────────────────── */
+  --text: #f5f5f7; /* primary */
+  --text-2: rgba(245, 245, 247, 0.62); /* secondary — labels, axis/chart labels (~6.6:1 AA) */
+  --text-3: rgba(245, 245, 247, 0.4); /* tertiary — quiet captions, placeholders (decorative tier, matches light-era ladder parity) */
 
-  /* ── the ONE strong accent: warm near-black ink (Miro/Figma/Uber T3) ──── */
-  --ink: #14140f; /* warm near-black — text + the lone structural fill */
-  --pill-active: #14140f; /* active content tab, selected day, primary CTA */
+  /* ── the ONE strong accent: ROYAL BLUE (selection/CTA role) ─────────────── */
+  --ink: #3457d5; /* BLUE — selection + the lone structural fill (white text, ~6:1 AA) */
+  --pill-active: #3457d5; /* active content tab, selected day, primary CTA */
   --on-pill: #ffffff;
-  --black-pill: var(--ink); /* alias — existing markup references this name */
+  --black-pill: var(--ink); /* alias — existing markup references this name (now blue) */
 
-  /* ── accent: demoted to a link tone ONLY, never a structural fill ─────── */
-  --accent: #255e9e; /* deep sky (RECIPE §2 sky) — link tone only, never royal blue */
-  --accent-2: #5b54c7; /* royal-soft / indigo — sparkline/line tone */
-  --accent-deep: #1d4a7d;
+  /* ── accent: links / lines / chart-lead — the soft royal ────────────────── */
+  --accent: #7d95f2; /* links, lines, chart-lead (~6.6:1 AA on canvas) */
+  --accent-2: #7d95f2; /* sparkline / line tone */
+  --accent-deep: #3457d5;
   --accent-ink: #ffffff;
-  --cyan: #7c8db0; /* slate — quiet highlight on white */
-  --cyan-2: #9aa8c4;
-  --accent-glow: rgba(37, 94, 158, 0.28);
-  --cyan-glow: rgba(124, 141, 176, 0.2);
+  --cyan: #6e87a8; /* ice — quiet highlight/line */
+  --cyan-2: #8ca0be;
+  --accent-glow: rgba(52, 87, 213, 0.35);
+  --cyan-glow: rgba(110, 135, 168, 0.25);
 
-  /* ── status: text-grade on white, semantic only ──────────────────────── */
-  --green: #1f7a43;
-  --amber: #8a6d1b;
-  --red: #a83464;
-  --focus: #14140f;
+  /* ── status: dark-mode semantics ──────────────────────────────────────── */
+  --green: #30d158;
+  --amber: #e5c15a;
+  --red: #f07067;
+  --focus: #7d95f2; /* crisp focus outline; soft focus RINGS use rgba(125,149,242,.45) */
 
   /* ── shape: pill-or-large (Miro/Figma T2) — three tiers, skip the middle ─ */
   --radius-frame: 28px; /* app frame / outer shell */
@@ -162,27 +171,38 @@ pre {
   font-feature-settings: "tnum";
 }
 
+/* Claude editorial seasoning — the serif DISPLAY face, applied ONLY to the
+   identity moments (page-title crumb, hero stat values, section titles) via
+   `--serif` (next/font Source Serif 4, wired in app/layout.tsx). Body, labels,
+   captions and nav STAY on --sans — the serif is seasoning, not the meal.
+   tnum is preserved so serif numbers keep tabular alignment in the stat row. */
+.display-serif {
+  font-family: var(--serif), Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
 ::selection {
-  background: rgba(20, 20, 15, 0.12);
+  background: rgba(125, 149, 242, 0.28);
 }
 
 /* scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(255, 255, 255, 0.3);
   background-clip: padding-box;
 }
 
@@ -274,10 +294,10 @@ pre {
   left: 0;
   width: var(--sidebar-w);
   background: var(--panel);
-  /* RECIPE §3: no right hairline — the gray canvas meeting the white rail is
-     the divider; a whisper shadow carries the separation. */
+  /* DARK: a dark drop-shadow is invisible, so a faint right hairline carries the
+     separation between the elevated rail and the near-black canvas (T1 dark exception). */
   border-right: none;
-  box-shadow: 2px 0 12px -8px rgba(20, 22, 26, 0.06);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   padding: 18px 14px;
@@ -385,16 +405,23 @@ pre {
 /* RECIPE §3: the sidebar active row is a softly ELEVATED WHITE pill (Cal.com
    inset-white-active-segment mechanism) — NOT black. Black is reserved for the
    calendar selection + content-area tabs/CTAs (T3/T7 split). */
+/* DARK: the elevated-white active pill becomes an elevated near-black surface
+   (#1A1A1F) + the dark hairline ring — NOT a filled blue block. Blue fills
+   belong to content CTAs/tabs/calendar-selection (T3/T7 split preserved). */
 .nav-item-active,
 .nav-item-active:hover {
-  color: var(--text);
-  background: #ffffff;
+  color: var(--accent);
+  background: #1a1a1f;
   box-shadow: var(--shadow-card);
 }
 
-/* RECIPE §4 delta 5: no gradients. The hero stat number is solid warm ink. */
+/* DARK: the hero stat number wears the near-white → soft-royal gradient. */
 .accent-num {
-  color: var(--ink);
+  color: var(--accent);
+  background: linear-gradient(180deg, #f5f5f7, #7d95f2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* ─── buttons ─────────────────────────────────────────────────────────── */
@@ -423,7 +450,7 @@ pre {
   white-space: nowrap;
 }
 .btn:hover {
-  background: #e2e3e6;
+  background: #1f1f24;
 }
 .btn:active {
   transform: scale(0.97);
@@ -439,7 +466,7 @@ pre {
   background: var(--pill-active);
 }
 .btn-primary:hover {
-  background: #262620;
+  background: #3e63e8;
   box-shadow: var(--shadow-card);
 }
 .btn-danger {
@@ -447,7 +474,7 @@ pre {
   background: var(--red);
 }
 .btn-danger:hover {
-  background: #8f2954;
+  background: #e85d54;
 }
 .btn-ghost {
   background: transparent;
@@ -489,7 +516,7 @@ textarea.input {
 select.input:focus,
 textarea.input:focus {
   background: var(--panel);
-  box-shadow: 0 0 0 3px rgba(20, 20, 15, 0.08);
+  box-shadow: 0 0 0 3px rgba(125, 149, 242, 0.3);
   outline: none;
 }
 textarea.input {
@@ -503,7 +530,7 @@ select.input {
   appearance: none;
   padding-right: 30px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6A65' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9AA0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
@@ -539,7 +566,7 @@ select.input {
   transition: background 0.14s var(--ease);
 }
 .table tbody tr:hover {
-  background: var(--bg);
+  background: var(--glass-hover);
 }
 
 /* ─── badge / chip / dot ──────────────────────────────────────────────── */
@@ -673,9 +700,9 @@ select.input {
 .skeleton {
   background: linear-gradient(
     90deg,
-    #ececf1 25%,
-    #f6f6f9 37%,
-    #ececf1 63%
+    #17171b 25%,
+    #212127 37%,
+    #17171b 63%
   );
   background-size: 400% 100%;
   animation: shimmer 1.4s ease infinite;
@@ -775,7 +802,7 @@ select.input {
   z-index: 120;
   display: grid;
   place-items: center;
-  background: rgba(20, 22, 26, 0.28);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(3px);
   animation: ptt-fade 0.16s ease-out;
 }
@@ -784,7 +811,7 @@ select.input {
   align-items: center;
   gap: 18px;
   padding: 20px 26px 20px 20px;
-  background: var(--card, #fff);
+  background: var(--card, #131316);
   border-radius: var(--radius-card, 20px);
   box-shadow: var(--shadow-pop);
   min-width: 340px;
@@ -923,7 +950,7 @@ select.input {
   align-items: flex-start;
   justify-content: center;
   padding: 12vh 16px 16px;
-  background: rgba(60, 60, 67, 0.28);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   animation: askOverlayIn 0.14s ease both;
@@ -1001,6 +1028,7 @@ select.input {
   align-items: center;
   gap: 8px;
   min-width: 0;
+  overflow: hidden; /* the page-title crumb ellipsizes rather than sliding under the action cluster on narrow topbars */
   font-size: 13px;
 }
 .sys-crumb {
@@ -1009,6 +1037,24 @@ select.input {
 }
 a.sys-crumb:hover {
   color: var(--text);
+}
+/* Claude editorial page-title crumb — serif masthead (family via .display-serif).
+   Desktop 19px; shrinks on mobile so its footprint stays near the original 13px
+   crumb and never collides with the topbar action cluster. */
+.sys-crumb-title {
+  color: var(--text);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: -0.015em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 768px) {
+  .sys-crumb-title {
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
 }
 .sys-canvas {
   max-width: 1280px;
@@ -1068,6 +1114,9 @@ a.sys-crumb:hover {
 }
 .sys-statcell__label {
   font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em; /* Claude caption-uppercase — tracked structural label */
   color: var(--text-2);
   line-height: 1.3;
   /* RECIPE: stat labels wrap instead of truncating with an ellipsis */
@@ -1078,16 +1127,20 @@ a.sys-crumb:hover {
   gap: 7px;
   min-width: 0;
 }
+/* Serif display numbers (via .display-serif in StatCell). Weight 400 — Claude's
+   display rule is "regular, never bold"; size carries the hierarchy, and the
+   hero adds the gradient accent. tnum keeps them column-aligned. */
 .sys-statcell__value {
   font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   color: var(--text);
 }
 .sys-statcell__value--hero {
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 .sys-statcell__delta {
   font-size: 11.5px;
@@ -1183,7 +1236,7 @@ a.sys-crumb:hover {
     box-shadow 0.16s var(--ease);
 }
 .sys-ask-field:hover {
-  background: #fff;
+  background: #1a1a1f;
   box-shadow: var(--shadow-card);
 }
 .sys-avatar-footer {
@@ -1192,7 +1245,7 @@ a.sys-crumb:hover {
   gap: 10px;
   padding: 12px 8px 2px;
   margin-top: 10px;
-  border-top: 1px solid var(--bg-2);
+  border-top: 1px solid var(--border);
 }
 @media (max-width: 768px) {
   .app-sidebar .sys-section-label,

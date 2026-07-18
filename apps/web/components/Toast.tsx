@@ -58,7 +58,7 @@ export function ToastViewport({ toasts }: { toasts: ToastItem[] }) {
             fontSize: 13,
             borderLeft: `3px solid ${KIND_COLOR[t.kind]}`,
             background: "var(--card-2)",
-            boxShadow: "0 12px 30px -10px rgba(0,0,0,0.55)",
+            boxShadow: "var(--shadow-pop)",
           }}
         >
           {t.message}

@@ -18,35 +18,37 @@ import type { ApiError, ProjectKeyView } from "./types";
 
 /**
  * ~2KB, dependency-free. Endpoint is inlined; no secret ships to the browser.
- * Styled to RECIPE §2/§3 (docs/design/RECIPE.md) so a bare embed on a
- * client's own site still reads as Azen: ink #14140F pill CTA + send button,
- * warm-charcoal (#37352F) text, a borderless white modal at the 16px tile
- * radius with the soft double shadow (no hairlines, no gradients), gray-well
- * (#EAEBEE) inputs, and a tinted-mint "Thanks" state instead of bare text.
+ * Styled to RECIPE ## DARK VARIANT (docs/design/RECIPE.md) so a bare embed on a
+ * client's own site still reads as Azen: royal-blue #3457D5 pill CTA + send
+ * button (white text), near-white (#F5F5F7) text, a solid near-black modal
+ * (#131316) at the 16px tile radius with a faint hairline + soft dark glow,
+ * dark-well (#17171B) inputs, and a deep-mint "Thanks" state. Self-contained —
+ * the snippet carries its own dark values (it does not inherit the host page's
+ * theme), so a 0.55 black scrim keeps it legible over any client background.
  */
 function embedSnippet(endpoint: string): string {
   return `<script>(function(){
   var EP=${JSON.stringify(endpoint)};
   var K=["bug","feature","question","praise","other"];
-  var S="position:fixed;right:20px;bottom:20px;z-index:2147483000;padding:10px 18px;border-radius:999px;background:#14140F;color:#fff;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 20px -6px rgba(20,22,26,.28),0 2px 6px rgba(20,22,26,.18)";
-  var IN="width:100%;box-sizing:border-box;margin-bottom:8px;padding:8px 10px;border-radius:10px;background:#EAEBEE;color:#37352F;border:none;font:14px system-ui,sans-serif";
+  var S="position:fixed;right:20px;bottom:20px;z-index:2147483000;padding:10px 18px;border-radius:999px;background:#3457D5;color:#fff;font:600 13px system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 20px -6px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4)";
+  var IN="width:100%;box-sizing:border-box;margin-bottom:8px;padding:8px 10px;border-radius:10px;background:#17171B;color:#F5F5F7;border:1px solid rgba(255,255,255,.09);font:14px system-ui,sans-serif";
   var btn=document.createElement("button");btn.textContent="Feedback";btn.setAttribute("style",S);document.body.appendChild(btn);
   var ov=null;
   function close(){if(ov){ov.remove();ov=null;}}
   btn.onclick=function(){
     if(ov){close();return;}
     ov=document.createElement("div");
-    ov.setAttribute("style","position:fixed;inset:0;z-index:2147483001;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px;background:rgba(20,20,15,.24)");
+    ov.setAttribute("style","position:fixed;inset:0;z-index:2147483001;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px;background:rgba(0,0,0,.55)");
     ov.onclick=function(e){if(e.target===ov)close();};
     var b=document.createElement("div");
-    b.setAttribute("style","width:320px;max-width:calc(100vw - 40px);background:#ffffff;border-radius:16px;padding:16px;color:#37352F;font:14px system-ui,sans-serif;box-shadow:0 8px 20px -6px rgba(20,22,26,.10),0 30px 60px -20px rgba(20,22,26,.22)");
-    b.innerHTML='<div style="font-weight:600;margin-bottom:10px;color:#14140F">Send feedback</div>'+
+    b.setAttribute("style","width:320px;max-width:calc(100vw - 40px);background:#131316;border-radius:16px;padding:16px;color:#F5F5F7;font:14px system-ui,sans-serif;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 20px 50px -12px rgba(0,0,0,.7)");
+    b.innerHTML='<div style="font-weight:600;margin-bottom:10px;color:#F5F5F7">Send feedback</div>'+
       '<select id="_azk" style="'+IN+'">'+K.map(function(k){return '<option value="'+k+'">'+k+'</option>';}).join("")+'</select>'+
       '<textarea id="_azm" rows="4" placeholder="What happened?" style="'+IN+';resize:vertical"></textarea>'+
       '<input id="_aze" type="email" placeholder="Email (optional)" style="'+IN+'">'+
       '<input id="_azw" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">'+
-      '<button id="_azs" style="width:100%;padding:9px;border:0;border-radius:999px;background:#14140F;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer">Send</button>'+
-      '<div id="_azt" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:#D9F3E1;color:#1F7A43;font-weight:500">Thanks — we got it.</div>';
+      '<button id="_azs" style="width:100%;padding:9px;border:0;border-radius:999px;background:#3457D5;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer">Send</button>'+
+      '<div id="_azt" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:#16301F;color:#7FD8A3;font-weight:500">Thanks — we got it.</div>';
     ov.appendChild(b);document.body.appendChild(ov);
     var q=function(id){return b.querySelector(id);};
     q("#_azs").onclick=function(){

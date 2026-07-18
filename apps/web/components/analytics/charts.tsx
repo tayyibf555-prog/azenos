@@ -36,12 +36,12 @@ function mix(from: string, to: string, t: number): string {
 
 /**
  * Intensity ramp used across the kit (heatmap cells, retention triangle,
- * Leaderboard's default rank tint): quiet slate → warm near-black ink.
- * RECIPE T3 — black is the one strong structural colour, so the "hot"/rank-1
- * end lands on --ink rather than the old royal-blue (#3457D5) endpoint.
+ * Leaderboard's default rank tint): quiet ice → royal-blue ink.
+ * DARK VARIANT — royal blue is the one strong structural accent, so the
+ * "hot"/rank-1 end lands on --ink (#3457D5).
  */
 export function intensityColor(t: number): string {
-  return mix(COLORS.teal, "#14140F" /* --ink */, t);
+  return mix(COLORS.teal, "#3457D5" /* --ink */, t);
 }
 
 const DEFAULT_PALETTE: readonly string[] = [

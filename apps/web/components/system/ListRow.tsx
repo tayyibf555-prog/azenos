@@ -22,10 +22,15 @@ export function ListRow({
   const body = (
     <>
       {leading ? <span style={{ flex: "none" }}>{leading}</span> : null}
-      <span style={{ minWidth: 0, flex: 1, display: "grid", gap: 1 }}>
+      <span style={{ minWidth: 0, flex: 1, display: "grid", gap: 3 }}>
         <span
           className="truncate"
-          style={{ fontSize: 13.5, fontWeight: 550, color: "var(--text)" }}
+          style={{
+            fontSize: 13.5,
+            fontWeight: 550,
+            lineHeight: 1.35,
+            color: "var(--text)",
+          }}
         >
           {primary}
         </span>

@@ -69,7 +69,19 @@ export function MiniCalendar({
           marginBottom: 8,
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel}</span>
+        {/* Claude caption-uppercase — the month header is a tracked structural
+            label (kicker), not a title, so it stays sans. */}
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "var(--text-2)",
+          }}
+        >
+          {monthLabel}
+        </span>
       </div>
 
       <div

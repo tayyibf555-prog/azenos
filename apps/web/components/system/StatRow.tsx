@@ -28,8 +28,8 @@ export function StatCell({
         <span
           className={
             hero
-              ? "sys-statcell__value sys-statcell__value--hero tnum accent-num"
-              : "sys-statcell__value tnum"
+              ? "sys-statcell__value sys-statcell__value--hero tnum accent-num display-serif"
+              : "sys-statcell__value tnum display-serif"
           }
         >
           {value}

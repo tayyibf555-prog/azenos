@@ -40,7 +40,7 @@ export function Modal({
         position: "fixed",
         inset: 0,
         zIndex: 100,
-        background: "rgba(4, 6, 11, 0.6)",
+        background: "rgba(0, 0, 0, 0.55)",
         backdropFilter: "blur(2px)",
         display: "grid",
         placeItems: "center",
@@ -58,7 +58,7 @@ export function Modal({
           maxHeight: "calc(100vh - 32px)",
           overflow: "auto",
           background: "var(--card)",
-          boxShadow: "0 24px 60px -12px rgba(0,0,0,0.6)",
+          boxShadow: "var(--shadow-pop)",
         }}
       >
         {title && (

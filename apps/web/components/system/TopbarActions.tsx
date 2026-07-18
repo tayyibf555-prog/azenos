@@ -36,7 +36,7 @@ export function TopbarActions({ notify = false }: { notify?: boolean }) {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#A83464",
+              background: "var(--red)",
             }}
           />
         ) : null}

@@ -163,3 +163,97 @@ Read against `apps/web/app/globals.css` `:root` and `components/system/tokens.ts
 8. **Inputs/buttons default to bordered gray, not pill wells.** `.btn { border:1px solid var(--border-2); --radius-sm }` (L400-401), inputs `border:1px solid var(--border-2)` (L478). Reference secondary controls are **borderless gray pills** (Uber `button-subtle #efefef`). **Fix:** secondary button = `--bg-well` fill, pill, no border; input = `--bg-well` fill, `--radius-tile`, no rest border, focus adds a soft ring not a hairline.
 
 **Net:** Azen is ~70% there (light canvas, white cards, pastel vocabulary, black-selection instinct all exist) but reads *enterprise-dev* because of (a) hairline borders everywhere, (b) 10–12px radii instead of pills, (c) tints shrunk to icon chips, and (d) royal-blue gradients competing with black. Removing borders, committing to pills, tinting whole cards, and making black the sole accent converts it to the reference's friendly consumer-SaaS language.
+
+---
+
+## DARK VARIANT (owner-directed 2026-07-17) — **THE ACTIVE THEME**
+
+The owner directed a dark repaint: **base `#0B0B0D`, BLUE accents**. The entire
+**STRUCTURE above remains owner-approved and untouched** — density, pill
+geometry, tinted-container language, numbers-first stat tiles, elevated-selection
+sidebar, radii (28/20/16/pill), and the whole component library are identical.
+**Only the surface palette flips.** All colour flows through the three token
+files (`globals.css :root`, `components/ui.ts COLORS`, `components/system/tokens.ts
+TINTS`) — VALUES were remapped, keys were never renamed. The "Soft Consumer
+Light" set above stays in this doc + git history as the light record; **this dark
+set is what ships.**
+
+### The dark-mode exception to T1 (hairlines return ON DARK ONLY)
+Dark drop-shadows are invisible, so the Wise/Starbucks "separate cards by shadow,
+never a hairline" rule (T1) is **inverted on dark**: cards separate by a faint
+**`rgba(255,255,255,0.07)` hairline ring** plus a subtle top-light inner
+highlight `0 1px 0 rgba(255,255,255,0.03) inset`. This is baked into
+`--shadow-card`/`--shadow-hover`; `--shadow-pop` keeps a real dark glow
+(`0 20px 50px -12px rgba(0,0,0,0.7)`) for modals/palette floating over the 0.55
+black scrim. This exception is dark-only; the light set keeps borderless T1.
+
+### `globals.css :root` (old → new)
+```
+--bg:          #F1F2F4 → #0B0B0D   (owner's exact hex)
+--bg-2:        #EAEBEE → #141417
+--bg-well:     #EAEBEE → #141417
+--panel:       #FFFFFF → #131316   (solid elevated surface — NO backdrop blur)
+--glass:       #FFFFFF → #131316
+--glass-2:     #F1F2F4 → #17171B   (inset fill / wells)
+--glass-hover: #FFFFFF → #1A1A1F   (elevated hover)
+--glass-border:#EDECEB → rgba(255,255,255,0.07)   (the dark hairline)
+--shadow-card: (Starbucks whisper-double) → 0 0 0 1px rgba(255,255,255,.07), 0 1px 0 rgba(255,255,255,.03) inset
+--shadow-hover:(…) → 0 0 0 1px rgba(255,255,255,.11), 0 1px 0 rgba(255,255,255,.04) inset
+--shadow-pop:  (…) → 0 0 0 1px rgba(255,255,255,.08), 0 20px 50px -12px rgba(0,0,0,.7)
+--input:       #FFFFFF → #17171B
+--border-2:    #E3E2E0 → rgba(255,255,255,0.10)
+--border-3:    #D5D4D1 → rgba(255,255,255,0.14)
+--text:        #37352F → #F5F5F7
+--text-2:      #6B6A65 → rgba(245,245,247,0.62)   (~6.6:1 AA)
+--text-3:      #9B9A94 → rgba(245,245,247,0.40)   (decorative/placeholder tier — matches light-era ladder parity, not AA-normal by design)
+--ink:         #14140F → #3457D5   (BLUE is now the ONE strong selection/CTA fill; white text ~6:1 AA)
+--pill-active: #14140F → #3457D5
+--on-pill:     #FFFFFF → #FFFFFF   (unchanged)
+--accent:      #255E9E → #7D95F2   (links / lines / chart-lead; ~6.6:1 AA)
+--accent-2:    #5B54C7 → #7D95F2
+--accent-deep: #1D4A7D → #3457D5
+--cyan:        #7C8DB0 → #6E87A8   (ice)
+--cyan-2:      #9AA8C4 → #8CA0BE
+--accent-glow: rgba(37,94,158,.28) → rgba(52,87,213,.35)
+--cyan-glow:   rgba(124,141,176,.2) → rgba(110,135,168,.25)
+--green:       #1F7A43 → #30D158
+--amber:       #8A6D1B → #E5C15A
+--red:         #A83464 → #F07067
+--focus:       #14140F → #7D95F2   (crisp outline; soft focus RINGS use rgba(125,149,242,.45))
+```
+- **Sidebar `.nav-item-active`**: elevated surface `#1A1A1F` + the hairline ring +
+  `#7D95F2` icon/text — the dark equivalent of the elevated-white pill. NOT a
+  filled blue block; **blue fills belong to content CTAs/tabs/calendar-selection**
+  (the T3/T7 split is preserved).
+- **`.accent-num` hero gradient**: `#F5F5F7 → #7D95F2` (background-clip text).
+- Scrims/overlays (`.ptt-scrim`, `.ask-overlay`, Modal, ProposalsBoard) →
+  `rgba(0,0,0,0.55)`. Hovers (table rows, ask-field, nav) → `#1A1A1F`/`#141417`.
+  Skeleton shimmer → `#17171B → #212127`. Scrollbars/selection → white-alpha.
+
+### `components/ui.ts COLORS` (old → new; desaturated + dark-tuned)
+```
+blue      #255E9E → #3457D5   royalSoft #5B54C7 → #7D95F2   violet #6C63C9 → #8F86D9
+green     #2E9E5B → #30D158   teal(ice) #7C8DB0 → #6E87A8   magenta #A85C93 → #C08FD1
+amber     #B98A2E → #E5C15A   orange    #C2703A → #C98F6B   red     #D4524A → #F07067
+grey      #8E8B87 → #8E8E93
+```
+- Chart-line lead order (spec): `#7D95F2 → #30D158 → #6E87A8 → #8E8E93 → #E5C15A`.
+- `intensityColor` ramp endpoint (heatmaps/retention/leaderboard) → `#3457D5` ink.
+
+### `components/system/tokens.ts TINTS` (deep washes · BRIGHT fg · same keys)
+```
+lavender  {bg:#262040, fg:#B4A8F5, pill:#332B55}   mint   {bg:#16301F, fg:#7FD8A3, pill:#1E402A}
+sky       {bg:#14283C, fg:#8CC1F0, pill:#1B3650}   peach  {bg:#38261A, fg:#F0B285, pill:#4A3222}
+rose      {bg:#3A1F2A, fg:#F2A3C0, pill:#4C2938}   butter {bg:#332C15, fg:#E8D48A, pill:#443B1D}
+graphite  {bg:#232326, fg:#B8B8BD, pill:#2E2E33}
+```
+- **Icon-holder switch:** the signature WHITE holder square inside a tinted
+  container fails AA against a *bright* fg icon on a deep wash, so on dark the
+  holder flips to **`#1C1C21`** with the bright fg icon + a faint inset hairline
+  (`IconSquircle`, `holder` mode). All fg/bg pairs verified ≥ 7:1.
+
+### Embeddable FeedbackWidget
+Its self-contained inline CSS (renders on client sites, does NOT inherit the host
+theme) was repainted to the dark set: `#3457D5` pill CTA/send (white text),
+`#131316` modal + hairline, `#17171B` inputs, `#16301F/#7FD8A3` deep-mint Thanks,
+`rgba(0,0,0,0.55)` scrim.

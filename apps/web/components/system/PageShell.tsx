@@ -36,18 +36,21 @@ export function PageShell({
           {crumbs.map((c, i) => {
             const last = i === crumbs.length - 1;
             return (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                 {c.href && !last ? (
                   <Link href={c.href} className="sys-crumb">
                     {c.label}
                   </Link>
                 ) : (
+                  /* Claude editorial: the page name is the masthead — serif
+                     display, weight 400, tight tracking (sizing + mobile shrink
+                     in .sys-crumb-title). Context crumbs before it stay small
+                     sans. */
                   <span
-                    className="sys-crumb"
-                    style={
+                    className={
                       last
-                        ? { color: "var(--text)", fontWeight: 600 }
-                        : undefined
+                        ? "sys-crumb sys-crumb-title display-serif"
+                        : "sys-crumb"
                     }
                   >
                     {c.label}

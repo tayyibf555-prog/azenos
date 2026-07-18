@@ -38,7 +38,7 @@ export function WizardProgress({ step }: { step: WizardStep }) {
                 fontSize: 12.5,
                 fontWeight: active ? 650 : 500,
                 color: active || done ? "var(--text)" : "var(--text-3)",
-                background: active ? "#ffffff" : "transparent",
+                background: active ? "#1a1a1f" : "transparent",
                 boxShadow: active ? "var(--shadow-card)" : "none",
               }}
             >

@@ -4,34 +4,35 @@
  */
 
 /**
- * Soft-Light palette (APPLE-THEME.md v2). Every value is an icon/line tone that
- * is legible on WHITE. Used two ways:
- *  1. Chart lines & sparklines — drawn directly on white cards.
- *  2. Pastel category chips — `tint(color, ~0.12–0.16)` over white composites to
- *     the spec's pastel washes (lavender/mint/peach/sky/rose/butter); the chip
- *     TEXT is dark (#1D1D1F) and the same-hue tone is the darker icon/accent.
- * Chart-line order (spec): royal → green → slate → warm-gray → muted-amber.
+ * DARK VARIANT palette (RECIPE ## DARK VARIANT, owner-directed 2026-07-17).
+ * Every value is a BRIGHT icon/line tone legible on the near-black canvas /
+ * elevated dark surfaces. Used two ways:
+ *  1. Chart lines & sparklines — drawn directly on dark cards.
+ *  2. Category chips — a bright tone at low alpha over dark composites to a deep
+ *     wash; chip TEXT is the bright tone itself (see components/system/tokens.ts
+ *     TINTS for the whole-container deep washes + bright fg pairs).
+ * Chart-line lead order (spec): royalSoft → green → ice → grey → amber.
  */
 export const COLORS = {
-  blue: "#255E9E", // deep sky (RECIPE §2 sky member) — no royal blue; black is the only strong accent
-  royalSoft: "#5B54C7", // indigo/periwinkle — lavender chip icon, line tone
-  violet: "#6C63C9", // lavender-violet icon tone (agents/AI), legible on white
-  green: "#2E9E5B", // positive — deltas, health, money-in; mint chip icon
-  teal: "#7C8DB0", // slate — quiet highlight/line on white (was ice-blue)
-  magenta: "#A85C93", // muted mauve — desaturated, no neon pink
-  amber: "#B98A2E", // muted amber — warn; butter chip icon
-  orange: "#C2703A", // muted clay/terracotta — peach chip icon, no neon orange
-  red: "#D4524A", // danger — rose chip icon
-  grey: "#8E8B87", // warm neutral gray (Apple-warm)
+  blue: "#3457D5", // royal blue — the ONE strong selection/CTA accent
+  royalSoft: "#7D95F2", // soft royal — links, lines, chart lead
+  violet: "#8F86D9", // lavender-violet icon tone (agents/AI), bright on dark
+  green: "#30D158", // positive — deltas, health, money-in; mint chip icon
+  teal: "#6E87A8", // ice — quiet highlight/line on dark (was slate)
+  magenta: "#C08FD1", // desaturated mauve, dark-tuned
+  amber: "#E5C15A", // amber — warn; butter chip icon
+  orange: "#C98F6B", // desaturated clay/terracotta — peach chip icon
+  red: "#F07067", // danger — rose chip icon
+  grey: "#8E8E93", // neutral gray
 } as const;
 
 export type ColorName = keyof typeof COLORS;
 
 /**
- * Translucent version of a hex colour. On the light theme this is the pastel
- * engine: an icon-tone hex at low alpha over a white surface resolves to the
- * spec's pastel wash — e.g. tint(royalSoft #5B54C7, 0.12) over white ≈ lavender
- * #ECEBFA. Used for chip/dot fills and same-hue hairline borders.
+ * Translucent version of a hex colour. On the DARK theme a bright tone at low
+ * alpha over a near-black surface resolves to a deep, quiet wash — e.g.
+ * tint(royalSoft #7D95F2, 0.12) over #0B0B0D reads as a soft royal veil. Used
+ * for chip/dot fills and same-hue hairline borders.
  */
 export function tint(hex: string, alpha: number): string {
   const h = hex.replace("#", "");

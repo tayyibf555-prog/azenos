@@ -37,9 +37,9 @@ export default function LoginPage() {
     width: "100%",
     padding: "10px 12px",
     borderRadius: 8,
-    border: "1px solid #232a3d",
-    background: "#0b0e14",
-    color: "#e6e9ef",
+    border: "1px solid rgba(255,255,255,0.1)",
+    background: "#17171b",
+    color: "#f5f5f7",
     fontSize: 15,
     boxSizing: "border-box",
   };
@@ -56,11 +56,11 @@ export default function LoginPage() {
       <div style={{ width: 360 }}>
         <h1 style={{ fontSize: 24, marginBottom: 16 }}>Azen OS</h1>
         {!url || !anonKey ? (
-          <p style={{ color: "#8b93a7", fontSize: 14 }}>
+          <p style={{ color: "rgba(245,245,247,0.62)", fontSize: 14 }}>
             Supabase isn&apos;t configured yet (local demo mode). Set
             NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY once the
             hosted project exists — until then the dashboard is open at{" "}
-            <a href="/" style={{ color: "#7aa2f7" }}>
+            <a href="/" style={{ color: "#7d95f2" }}>
               /
             </a>
             .
@@ -86,15 +86,15 @@ export default function LoginPage() {
               required
             />
             {error && (
-              <p style={{ color: "#c96a72", fontSize: 13, margin: 0 }}>{error}</p>
+              <p style={{ color: "#f07067", fontSize: 13, margin: 0 }}>{error}</p>
             )}
             <button
               type="submit"
               disabled={busy}
               style={{
                 ...field,
-                background: "#7aa2f7",
-                color: "#0b0e14",
+                background: "#3457d5",
+                color: "#ffffff",
                 fontWeight: 600,
                 cursor: "pointer",
               }}

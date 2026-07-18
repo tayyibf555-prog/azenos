@@ -194,7 +194,7 @@ export function AskScreen({ hasAnthropicKey = true }: { hasAnthropicKey?: boolea
                   fontSize: 12.5,
                   fontFamily: "inherit",
                   color: active ? "var(--text)" : "var(--text-2)",
-                  background: active ? "#ffffff" : "transparent",
+                  background: active ? "#1a1a1f" : "transparent",
                   boxShadow: active ? "var(--shadow-card)" : "none",
                 }}
                 title={s.title ?? "Untitled"}
