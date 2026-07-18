@@ -61,7 +61,7 @@ function labelDay(iso: string): string {
 // ── delta chip ────────────────────────────────────────────────────────────────
 function Delta({ recent, prior }: { recent: number; prior: number }) {
   const d = fmtPct(recent, prior);
-  const color = d.flat ? "var(--text-3)" : d.up ? "var(--green)" : "var(--red)";
+  const color = d.flat ? "var(--text-2)" : d.up ? "var(--green)" : "var(--red)";
   return (
     <span className="cc-delta" style={{ color }}>
       {d.flat ? "±" : d.up ? "▲" : "▼"} {d.text}
@@ -107,7 +107,7 @@ function VolumeChart({ series, days }: { series: number[]; days: string[] }) {
         return (
           <g key={i}>
             <line x1={PAD.l} x2={W - PAD.r} y1={gy} y2={gy} stroke="var(--border)" strokeWidth={1} />
-            <text x={PAD.l - 7} y={gy + 3} textAnchor="end" fontSize={9.5} fill="var(--text-3)" fontFamily="var(--mono)">
+            <text x={PAD.l - 7} y={gy + 3} textAnchor="end" fontSize={9.5} fill="var(--text-2)" fontFamily="var(--mono)">
               {gbp(v)}
             </text>
           </g>
@@ -120,7 +120,7 @@ function VolumeChart({ series, days }: { series: number[]; days: string[] }) {
           y={H - 7}
           textAnchor={i === 0 ? "start" : i === xIdx.length - 1 ? "end" : "middle"}
           fontSize={9.5}
-          fill="var(--text-3)"
+          fill="var(--text-2)"
           fontFamily="var(--mono)"
           letterSpacing="0.06em"
         >
@@ -158,7 +158,7 @@ function ConsistencyRow({ p }: { p: PulseProject }) {
           />
         ))}
       </div>
-      <span className="cc-sub tnum" style={{ flex: "none", width: 40, textAlign: "right", color: "var(--text-3)" }}>
+      <span className="cc-sub tnum" style={{ flex: "none", width: 40, textAlign: "right", color: "var(--text-2)" }}>
         {p.daily.filter((v) => v > 0).length}/{p.daily.length}
       </span>
     </div>
@@ -170,7 +170,7 @@ function ProjectCard({ p }: { p: PulseProject }) {
   return (
     <div className="cc-card">
       <Delta recent={p.cur} prior={p.prev} />
-      <span className="cc-kicker" title={p.name}>
+      <span className="cc-kicker" title={p.name} style={{ paddingRight: 58 }}>
         {p.name}
       </span>
       <span className="cc-num" style={{ marginTop: 2 }}>
@@ -226,7 +226,7 @@ export function CommandCenterPulse({ data }: { data: PulseData }) {
     <div className="cc-grid">
       {/* header — PULSE kicker + LIVE chip */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <span className="cc-kicker" style={{ letterSpacing: "0.16em", color: "var(--text-3)" }}>
+        <span className="cc-kicker" style={{ letterSpacing: "0.16em", color: "var(--text-2)" }}>
           Portfolio pulse · last 30 days
         </span>
         <span className="cc-live">
@@ -288,7 +288,7 @@ export function CommandCenterPulse({ data }: { data: PulseData }) {
           <span className="cc-num cc-num--sm">
             £{gbp(Math.round(data.mrrPence / 100))}
           </span>
-          <span className="cc-sub">recurring · monthly</span>
+          <span className="cc-sub">recurring · mo</span>
         </div>
 
         <div className="cc-card">
@@ -318,7 +318,7 @@ export function CommandCenterPulse({ data }: { data: PulseData }) {
           {donutSegs.length > 0 ? (
             <Donut segments={donutSegs} size={120} thickness={16} centerLabel={gbp(cur30)} />
           ) : (
-            <span className="cc-sub" style={{ color: "var(--text-3)" }}>No project events in the last 30 days.</span>
+            <span className="cc-sub" style={{ color: "var(--text-2)" }}>No project events in the last 30 days.</span>
           )}
         </div>
       </div>

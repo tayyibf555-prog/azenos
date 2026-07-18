@@ -1176,6 +1176,146 @@ a.sys-crumb:hover {
   }
 }
 
+/* ── §5 Command Center — TERMINAL-LUXE pulse board (owner "Zerrio live" ref) ──
+   Near-black hairline cards, tiny uppercase MONO kickers, huge white tnum
+   numerals, small green/red delta chips. Monochrome discipline: colour lives
+   ONLY in the delta chips, the LIVE dot, and the tiny chart/donut segments. */
+.cc-grid {
+  display: grid;
+  gap: 12px;
+}
+.cc-strip,
+.cc-cells {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.cc-mainrow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+.cc-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.cc-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px 15px;
+  background: #101013; /* cards deepen toward #101013 over the #0B0B0D canvas */
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-card); /* the existing faint white hairline */
+}
+.cc-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-sub {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-2); /* 0.62 → ~6:1 AA on near-black; 0.4 tertiary fails at this 10.5px size */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.cc-num--sm {
+  font-size: 21px;
+}
+.cc-num--hero {
+  font-size: 38px;
+}
+.cc-delta {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.cc-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.cc-seg {
+  display: inline-flex;
+  gap: 2px;
+  align-self: flex-start;
+  padding: 2px;
+  background: var(--card-2);
+  border-radius: 8px;
+}
+.cc-seg button {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-3);
+  transition:
+    background 0.14s var(--ease),
+    color 0.14s var(--ease);
+}
+.cc-seg button:hover {
+  color: var(--text-2);
+}
+.cc-seg button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+@media (max-width: 1024px) {
+  .cc-strip,
+  .cc-cells {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cc-mainrow,
+  .cc-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .cc-strip,
+  .cc-cells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ── §4 ListRow list (hairline separators + hover) ───────────────────────── */
 .sys-list {
   display: flex;
