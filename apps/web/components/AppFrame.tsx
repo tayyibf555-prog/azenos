@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { CommandPalette } from "./ask/CommandPalette";
+import { PushToTalk } from "./PushToTalk";
 import { openAskPalette } from "./ask/paletteEvents";
 import { Avatar } from "./system/Avatar";
 import { SysIcon, type IconName } from "./system/icons";
@@ -110,7 +111,7 @@ export function AppFrame({
         {/* ⌘K Ask field — opens the same palette the keybinding does */}
         <button
           type="button"
-          onClick={openAskPalette}
+          onClick={() => openAskPalette()}
           className="sys-ask-field sidebar-ask"
           aria-label="Ask Azen (Cmd/Ctrl+K)"
         >
@@ -150,7 +151,7 @@ export function AppFrame({
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <button
               type="button"
-              onClick={openAskPalette}
+              onClick={() => openAskPalette()}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -179,8 +180,8 @@ export function AppFrame({
                 fontSize: 11.5,
               }}
             >
-              <span className="kbd">🎙</span>
-              Speak your question
+              <span className="kbd">⌃⌥</span>
+              Hold to talk
             </div>
             <div
               style={{
@@ -243,6 +244,7 @@ export function AppFrame({
 
       {/* Global Ask Azen palette — opens on Cmd/Ctrl-K from any screen. */}
       <CommandPalette />
+      <PushToTalk />
     </div>
   );
 }

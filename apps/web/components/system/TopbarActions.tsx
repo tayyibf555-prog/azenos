@@ -14,7 +14,7 @@ export function TopbarActions({ notify = false }: { notify?: boolean }) {
       <button
         type="button"
         className="sys-iconbtn"
-        onClick={openAskPalette}
+        onClick={() => openAskPalette()}
         aria-label="Ask Azen (Cmd/Ctrl+K)"
       >
         <SysIcon name="search" size={16} strokeWidth={1.6} />

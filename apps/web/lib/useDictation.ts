@@ -177,12 +177,24 @@ export interface DictationController {
   elapsedSeconds: number;
   /** Calm, user-facing error string (mic permission, network) — or null. */
   error: string | null;
+  /**
+   * Bumps every time a (non-null) error is set — even if the string is
+   * identical to the last one. Lets a consumer react to a REPEAT failure that
+   * `error` alone (unchanged reference) would swallow.
+   */
+  errorNonce: number;
   /** True once Whisper confirmed no OPENAI_API_KEY and no Web Speech fallback exists. */
   unavailable: boolean;
   /** Start capture (whisper) or start listening (webspeech). No-op otherwise. */
   start: () => void;
   /** Stop capture/listening. No-op if idle. */
   stop: () => void;
+  /**
+   * Stop capture/listening WITHOUT transcribing — discards the clip and never
+   * touches /api/transcribe. Use for a discarded (sub-threshold) hold, a
+   * shortcut abort, or a blur/hide safety release.
+   */
+  cancel: () => void;
   /** Start if idle/not-listening, stop if active. The one handler a mic button needs. */
   toggle: () => void;
 }
@@ -192,6 +204,7 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
   const [recState, setRecState] = useState<DictationRecState>("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [errorNonce, setErrorNonce] = useState(0);
   const [listening, setListening] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -201,6 +214,10 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
+  // Monotonic start-generation counter. Bumped at the top of startRecording,
+  // stopRecording and cancel(); a stale generation observed after an `await`
+  // means a stop/cancel raced the async mic grant and the start must abort.
+  const genRef = useRef(0);
 
   // Latest getValue/setValue without forcing callback identities to change
   // every render (callers rarely memoize inline closures).
@@ -238,12 +255,44 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
   // ── whisper capture ─────────────────────────────────────────────────────
 
   const stopRecording = useCallback(() => {
+    // Bump the generation FIRST. If a start is still awaiting getUserMedia
+    // (recRef.current === null because the recorder isn't built yet), the
+    // late-resolving grant must abort via the gen check in startRecording
+    // rather than spin up a hot mic with no one left to stop it — this is the
+    // >350ms hold-and-release path (finish() → stop()), which never bumped the
+    // generation before. When a recorder already exists the start has long
+    // completed, so bumping here is a no-op for it and the normal
+    // stop-then-transcribe flow (recorder.onstop) is unaffected.
+    genRef.current++;
     if (tickerRef.current) {
       clearInterval(tickerRef.current);
       tickerRef.current = null;
     }
     const rec = recRef.current;
     if (rec && rec.recorder.state !== "inactive") rec.recorder.stop();
+  }, []);
+
+  // Stop capture WITHOUT transcribing. Bumping genRef aborts any start still
+  // waiting on getUserMedia (see the gen check in startRecording); if a
+  // recorder already exists we swap its transcribe-on-stop handler for a plain
+  // teardown so stopping it never reaches /api/transcribe. Web Speech has no
+  // network cost, so cancelling it is the same as stopping it.
+  const cancel = useCallback(() => {
+    genRef.current++;
+    if (tickerRef.current) {
+      clearInterval(tickerRef.current);
+      tickerRef.current = null;
+    }
+    recognitionRef.current?.stop();
+    const rec = recRef.current;
+    if (rec) {
+      rec.recorder.onstop = () => {
+        rec.stream.getTracks().forEach((t) => t.stop());
+        recRef.current = null;
+      };
+      if (rec.recorder.state !== "inactive") rec.recorder.stop();
+    }
+    setRecState("idle");
   }, []);
 
   const transcribe = useCallback(async (blob: Blob) => {
@@ -265,6 +314,7 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
       }
       case "failed":
         setError("Transcription failed — try again.");
+        setErrorNonce((n) => n + 1);
         break;
       case "empty":
       default:
@@ -276,12 +326,22 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
   const startRecording = useCallback(async () => {
     if (recState !== "idle") return;
     setError(null);
+    const gen = ++genRef.current;
     const mic = await requestMicStream();
     if (!mic.ok) {
       setError("Microphone unavailable — check browser permissions.");
+      setErrorNonce((n) => n + 1);
       return;
     }
     const { stream } = mic;
+    if (gen !== genRef.current) {
+      // A stop/cancel landed while getUserMedia was resolving — the grant is
+      // now orphaned. Tear the stream down immediately and stay idle rather
+      // than leaving a hot mic recording with no one to stop it.
+      stream.getTracks().forEach((t) => t.stop());
+      setRecState("idle");
+      return;
+    }
     let recorder: MediaRecorder;
     try {
       const mime = pickRecorderMime();
@@ -291,6 +351,7 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
     } catch {
       stream.getTracks().forEach((t) => t.stop());
       setError("Recording is not supported in this browser.");
+      setErrorNonce((n) => n + 1);
       return;
     }
     const chunks: Blob[] = [];
@@ -377,9 +438,11 @@ export function useDictation({ getValue, setValue }: UseDictationOptions): Dicta
     listening,
     elapsedSeconds,
     error,
+    errorNonce,
     unavailable,
     start,
     stop,
+    cancel,
     toggle,
   };
 }

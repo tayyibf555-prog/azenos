@@ -8,8 +8,19 @@
  */
 export const ASK_PALETTE_OPEN_EVENT = "azen:ask-palette-open";
 
-/** Ask the CommandPalette to open — used by the sidebar "Ask · ⌘K" affordance. */
-export function openAskPalette(): void {
+/** Optional payload: text to pre-fill the palette input with (push-to-talk). */
+export interface AskPaletteOpenDetail {
+  text?: string;
+}
+
+/**
+ * Ask the CommandPalette to open — used by the sidebar "Ask · ⌘K" affordance
+ * and by push-to-talk, which passes the dictated transcript to pre-fill the
+ * input. Calling with no argument just opens it (backwards-compatible).
+ */
+export function openAskPalette(text?: string): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(ASK_PALETTE_OPEN_EVENT));
+  const detail: AskPaletteOpenDetail | undefined =
+    typeof text === "string" && text.trim() !== "" ? { text } : undefined;
+  window.dispatchEvent(new CustomEvent(ASK_PALETTE_OPEN_EVENT, { detail }));
 }

@@ -8,6 +8,7 @@ import { deriveAskContext } from "./context";
 import { DictationMic } from "./DictationMic";
 import { MessageList } from "./MessageList";
 import { ASK_PALETTE_OPEN_EVENT } from "./paletteEvents";
+import type { AskPaletteOpenDetail } from "./paletteEvents";
 import { useAskChat } from "./useAskChat";
 
 /**
@@ -51,10 +52,16 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Sidebar "Ask · ⌘K" affordance opens the palette the same way the
-  // keybinding does — via this event, so there's exactly one open path.
+  // Sidebar "Ask · ⌘K" affordance and push-to-talk open the palette the same
+  // way the keybinding does — via this event, so there's exactly one open path.
+  // Push-to-talk carries the dictated transcript in the event detail; drop it
+  // straight into the input so the owner just reviews and hits Enter.
   useEffect(() => {
-    const onOpenRequest = () => setOpen(true);
+    const onOpenRequest = (e: Event) => {
+      setOpen(true);
+      const detail = (e as CustomEvent<AskPaletteOpenDetail | undefined>).detail;
+      if (detail?.text) setDraft(detail.text);
+    };
     window.addEventListener(ASK_PALETTE_OPEN_EVENT, onOpenRequest);
     return () => window.removeEventListener(ASK_PALETTE_OPEN_EVENT, onOpenRequest);
   }, []);
