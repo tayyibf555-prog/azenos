@@ -1,4 +1,12 @@
-export { db, getDb, closeDb, getDbUrl, schema, type Db } from "./client";
+export {
+  db,
+  getDb,
+  closeDb,
+  getDbUrl,
+  isTransactionPoolerUrl,
+  schema,
+  type Db,
+} from "./client";
 export * from "./schema/index";
 
 // Europe/London day boundaries (spec §13) — the one tz implementation,

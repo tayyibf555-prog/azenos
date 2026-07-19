@@ -110,6 +110,25 @@ and E2E-verified in the browser by the lead. 108 tests across the workspace.
     `projects.slug` and `industries.slug` are globally unique — cross-org
     collisions would 500. Harmless single-org; revisit before real
     multi-tenancy (Phase 7+).
+19. **Runtime DB = TRANSACTION pooler (6543); migrations = SESSION pooler
+    (5432)** (2026-07-19): on the session pooler every serverless instance
+    pins a server connection, and a deploy overlap doubled instances and
+    exhausted the pool — /api/projects (heaviest query) 500'd for minutes,
+    then self-healed. Runtime now targets the transaction pooler:
+    `client.ts` disables postgres-js prepared statements when the URL port
+    is 6543 (`isTransactionPoolerUrl`; readonly.ts always ran
+    `prepare: false`). Session-state audit came back clean — advisory locks
+    are all `pg_advisory_xact_lock` (transaction-scoped), no LISTEN/NOTIFY,
+    no `SET role`/timezone (London day boundaries are inline
+    `AT TIME ZONE` SQL). One real casualty found empirically: the RO
+    client's connection-level `statement_timeout` startup param is IGNORED
+    by the transaction pooler (server reports the 2min default), so
+    `runReadonlySql` now pins 5s via `SET LOCAL` inside its wrapping
+    transaction — pooling-mode-proof AND user-proof (prod's
+    `DATABASE_URL_RO` currently carries the full `postgres` user, not
+    `azen_readonly`; swapping it to the real readonly role is a pending
+    owner to-do). drizzle-kit stays on 5432 — drizzle.config.ts refuses a
+    6543 URL outright.
 
 ## Owner to-dos (external lead-time items, spec §14 Phase 0)
 

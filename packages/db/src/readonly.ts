@@ -50,7 +50,10 @@ function getReadonlyClient(): postgres.Sql {
       max: 4,
       idle_timeout: 20,
       onnotice: () => {},
-      // belt-and-braces: the role already sets 5s, but pin it per-connection.
+      // Applies on direct/session connections only — Supabase's transaction
+      // pooler (port 6543) ignores startup params (verified: server reports
+      // the 2min default). runReadonlySql therefore ALSO pins the timeout
+      // per-transaction via SET LOCAL, which survives every pooling mode.
       connection: { statement_timeout: 5000 },
       prepare: false,
     });
@@ -175,10 +178,14 @@ export async function runReadonlySql(
 
   try {
     const sql = getReadonlyClient();
-    const rows = (await sql.unsafe(wrapped)) as unknown as Record<
-      string,
-      unknown
-    >[];
+    // Wrap in a transaction so SET LOCAL scopes the 5s timeout to exactly
+    // this statement on exactly this server connection — the role-level
+    // default only applies when the URL logs in as azen_readonly, and the
+    // connection-level startup param is ignored by the transaction pooler.
+    const rows = (await sql.begin(async (tx) => {
+      await tx.unsafe("set local statement_timeout = '5s'");
+      return tx.unsafe(wrapped);
+    })) as unknown as Record<string, unknown>[];
     const truncated = rows.length > maxRows;
     return {
       ok: true,

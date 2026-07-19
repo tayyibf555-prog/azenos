@@ -22,9 +22,36 @@ export function getDbUrl(): string {
   return url;
 }
 
+/**
+ * Serverless deploys must use Supabase's TRANSACTION-mode pooler (port 6543):
+ * session mode (5432) pins one server connection per client and exhausts the
+ * pool under deploy overlap (observed as /api/projects 500s). Transaction mode
+ * multiplexes clients across few server connections, so server session state
+ * no longer belongs to this client — postgres-js named prepared statements
+ * (default `prepare: true`) break there ("prepared statement … does not
+ * exist"). Detection is by port: 6543 is the transaction pooler by Supabase
+ * convention. Scoped to 6543 rather than unconditional so local dev (:54329)
+ * and the session pooler (:5432 — still required by `pnpm migrate`, see
+ * drizzle.config.ts) keep prepared statements, byte-identical to before. An
+ * unparseable URL fails safe (prepare disabled — worst case a per-query
+ * re-parse, never a pooler error); postgres() surfaces truly broken URLs.
+ */
+export function isTransactionPoolerUrl(url: string): boolean {
+  try {
+    return new URL(url).port === "6543";
+  } catch {
+    return true;
+  }
+}
+
 function getClient(): postgres.Sql {
   if (!client) {
-    client = postgres(getDbUrl(), { max: 10, onnotice: () => {} });
+    const url = getDbUrl();
+    client = postgres(url, {
+      max: 10,
+      onnotice: () => {},
+      prepare: !isTransactionPoolerUrl(url),
+    });
   }
   return client;
 }

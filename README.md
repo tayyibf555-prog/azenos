@@ -64,3 +64,12 @@ docs                Decisions log, templates
 compose alternative if you prefer Docker. The hosted Supabase project is the
 production target — once created, fill the `SUPABASE_*` env vars and auth
 activates automatically (see docs/DECISIONS.md #2).
+
+## Production database (Supabase pooler ports)
+
+Two pooler modes, two ports, on purpose (docs/DECISIONS.md #19):
+
+- **Runtime (Vercel)** — TRANSACTION pooler, port **6543**. Serverless-safe;
+  `packages/db/src/client.ts` auto-disables prepared statements on 6543.
+- **Migrations** (`pnpm db:migrate`) — SESSION pooler, port **5432**, only.
+  drizzle.config.ts refuses a 6543 URL; swap the port before migrating.
